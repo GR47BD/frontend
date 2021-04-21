@@ -1,0 +1,20 @@
+{
+  "name": "frontend",
+  "version": "0.0.1",
+  "description": "...",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "test": ""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GR47BD/frontend.git"
+  },
+  "author": "GR47BD-TUE",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GR47BD/frontend/issues"
+  },
+  "homepage": "https://github.com/GR47BD/frontend#readme"
+}
