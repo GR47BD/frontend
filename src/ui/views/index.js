@@ -7,7 +7,7 @@ export default class IndexView {
             <div> 
                 {/* In the next line the component TestComponent is loaded in as HTML element */}
                 <TestComponent></TestComponent>
-                {/* The following line contains standard text. */}
+                {/* The following line contains standard text. */} 
                 Hello World!
             </div>
         );
