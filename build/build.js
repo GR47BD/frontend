@@ -3,8 +3,9 @@ const webpack = require("webpack");
 const startTime = process.hrtime();
 const config = require("./webpack.prod.conf");
 
+// Run webpack using the given config from './webpack.prod.conf'
 webpack(config, err => {
-	if(err) throw err;
+	if (err) throw err;
 
 	const endTime = process.hrtime(startTime);
 

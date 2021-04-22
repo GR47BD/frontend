@@ -9,9 +9,7 @@ const server = new WebpackDevServer(compiler, {
 	contentBase: path.join(__dirname, '../dist')
 });
 
+// Start the development server on the specified port and 'localhost'.
 server.listen(port, 'localhost', function (err) {
-	if (err) {
-		console.log(err);
-	}
-	console.log('WebpackDevServer listening at localhost:', port);
+	if (err) throw err;
 });
