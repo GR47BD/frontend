@@ -5,7 +5,8 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "test": ""
+    "test": "node build/build.dev",
+    "build": "node build/build"
   },
   "repository": {
     "type": "git",
@@ -16,5 +17,26 @@
   "bugs": {
     "url": "https://github.com/GR47BD/frontend/issues"
   },
-  "homepage": "https://github.com/GR47BD/frontend#readme"
+  "homepage": "https://github.com/GR47BD/frontend#readme",
+  "devDependencies": {
+    "@babel/core": "^7.13.16",
+    "@babel/plugin-transform-react-jsx": "^7.13.12",
+    "@babel/preset-env": "^7.13.15",
+    "babel-loader": "^8.2.2",
+    "babel-polyfill": "^6.26.0",
+    "css-loader": "^5.2.4",
+    "extract-loader": "^5.1.0",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.3.1",
+    "node-sass": "^5.0.0",
+    "sass-loader": "^11.0.1",
+    "url-loader": "^4.1.1",
+    "webpack": "^5.35.0",
+    "webpack-dev-server": "^3.11.2",
+    "webpack-encoding-plugin": "^0.3.1",
+    "webpack-merge": "^5.7.3"
+  },
+  "dependencies": {
+    "mithril": "^2.0.4"
+  }
 }
