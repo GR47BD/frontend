@@ -8,7 +8,7 @@ export default class IndexView {
                 {/* In the next line the component TestComponent is loaded in as HTML element */}
                 <TestComponent></TestComponent>
                 {/* The following line contains standard text. */} 
-                Hello World! test2
+                Hello World! test3
             </div>
         );
         // HTML syntax that is returned may only contain one root element
