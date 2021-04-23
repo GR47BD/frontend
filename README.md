@@ -5,7 +5,7 @@ This repository contains all the code for the frontend of our program. The front
 The site is built on the Mithril framework and packaged using Webpack. Styling is done using SCSS, which is a version of Sass. Babel is used to compile the code into something even old browsers understand.
 
 ## Testing
-To test the frontend you will first have to install NodeJS. When installing NodeJS the package manager NPM is also automatically installed. After pulling the latest version of the repository you can use the following commands:
+To test the frontend you will first have to install NodeJS. When installing NodeJS the package manager NPM is also automatically installed. After pulling the latest version of the repository you can use the following commands (make sure to run these commands in the frontend folder):
 ```bash
 # Installs the dependencies
 $ npm install
