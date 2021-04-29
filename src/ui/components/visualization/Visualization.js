@@ -5,8 +5,8 @@ import DataHandler from '@/DataHandler.js';
  */
 export default class Visualization{
 
-    oncreate(vnode){
-        vnode.state.DataHandler = new DataHandler(vnode.attrs.csvData);
+    oninit(vnode){
+        vnode.state.dataHandler = new DataHandler(vnode.attrs.csvData);
     }
-    
+
 }

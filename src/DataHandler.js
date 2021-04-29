@@ -30,7 +30,7 @@ export default class DataHandler{
         // If personsData does not exist yet, define it
         if(typeof this.personsData == 'undefined'){
             // Get only the fromId from the dataset
-            let duplicatePersons = this.rawData.map(item => item.fromId); 
+            let duplicatePersons = this.rawData.map(item => item.fromId && item.toId); 
             // Remove the duplicates and save to personsData
             this.personsData = duplicatePersons.filter((item1, index, array) => array.findIndex(item2 => (item1 == item2)) === index); 
         }

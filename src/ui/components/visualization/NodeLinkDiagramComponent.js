@@ -2,61 +2,110 @@ import m from "mithril";
 import * as d3 from "d3";
 import Visualization from "./Visualization";
 
-// from https://observablehq.com/@d3/force-directed-graph
-export default class NodeLinkDiagramComponent extends Visualization{
-    
-    oncreate(vnode){
-        
-       super.oncreate(vnode);
+export default class NodeLinkDiagramComponent extends Visualization {
 
-       vnode.state.DataHandler.printRawData();
+    oninit(vnode) {
+        super.oninit(vnode)
+        this.scale = 3;
+    }
 
-        // const links = data.links.map(d => Object.create(d));
-        // const nodes = data.nodes.map(d => Object.create(d));
-      
-        // const simulation = d3.forceSimulation(nodes)
-        //     .force("link", d3.forceLink(links).id(d => d.id))
-        //     .force("charge", d3.forceManyBody())
-        //     .force("center", d3.forceCenter(width / 2, height / 2));
-      
-        // const svg = d3.select('#node_link_diagram')
-        //     .attr("viewBox", [0, 0, width, height]);
-      
-        // const link = svg.append("g")
-        //     .attr("stroke", "#999")
-        //     .attr("stroke-opacity", 0.6)
-        //   .selectAll("line")
-        //   .data(links)
-        //   .join("line")
-        //     .attr("stroke-width", d => Math.sqrt(d.value));
-      
-        // const node = svg.append("g")
-        //     .attr("stroke", "#fff")
-        //     .attr("stroke-width", 1.5)
-        //   .selectAll("circle")
-        //   .data(nodes)
-        //   .join("circle")
-        //     .attr("r", 5)
-        //     .attr("fill", color)
-        //     .call(drag(simulation));
-      
-        // node.append("title")
-        //     .text(d => d.id);
-      
-        // simulation.on("tick", () => {
-        //   link
-        //       .attr("x1", d => d.source.x)
-        //       .attr("y1", d => d.source.y)
-        //       .attr("x2", d => d.target.x)
-        //       .attr("y2", d => d.target.y);
-      
-        //   node
-        //       .attr("cx", d => d.x)
-        //       .attr("cy", d => d.y);
-        // });
-      
-        // invalidation.then(() => simulation.stop());
-   
+    oncreate(vnode) {
+
+        this.width = 275;
+        this.height = 275;
+
+
+        const persons = vnode.state.dataHandler.getPersons();
+        const emails = vnode.state.dataHandler.getEmails();
+
+        let nodes = persons.map(function (d, i) {
+            return {
+                id: parseInt(d)
+            }
+        });
+
+        let edges = emails.map(function (d) {
+            return {
+                source: parseInt(d.fromId),
+                target: parseInt(d.toId),
+                sentiment: parseFloat(d.sentiment)
+            }
+        })
+
+        let node_link_diagram = d3.select('#node_link_diagram');
+        node_link_diagram.append('svg')
+            .attr('width', this.width * this.scale)
+            .attr('height', this.height * this.scale);
+
+        let simulation = d3.forceSimulation(nodes)
+            .force('charge', d3.forceManyBody)
+            .force('center', d3.forceCenter((this.width * this.scale) / 2), (this.height * this.scale) / 2)
+            .force('link', d3.forceLink().id(function (d) {
+                return d.id
+            }).links(edges))
+            .on('tick', this.ticked(nodes, edges));
+    }
+
+    updateEdges(edges) {
+        let svgEdges = d3.select('svg').append('g')
+            .selectAll('line')
+            .data(edges)
+        console.log(this.scale)
+        svgEdges.enter()
+            .append('line')
+            .merge(svgEdges)
+            .attr('x1', (edge) => {
+                return edge.source.x * this.scale
+            })
+            .attr('y1', (edge) => {
+                return edge.source.y * this.scale
+            })
+            .attr('x2', (edge) => {
+                return edge.target.x * this.scale
+            })
+            .attr('y2', (edge) => {
+                return edge.target.y * this.scale
+            })
+            .attr('transform', `translate(${(this.width * this.scale) / 2},${(this.height * this.scale) / 2})`)
+            .attr('stroke', function (edge) {
+                if(edge.sentiment < 0){
+                    return'rgb(255,0,0)'
+                } 
+                else if(edge.sentiment > 0){
+                    return 'rgb(0,255,0)'
+                }
+                else if(edge.sentiment == 0){
+                    return '#ffffff'
+                }
+            })
+            .attr('stroke-width', function (edge) {
+                return Math.abs(edge.sentiment) * 5
+            })
+
+        svgEdges.exit().remove()
+    }
+
+    updateNodes(nodes) {
+        let svgNodes = d3.select('svg').append('g').selectAll('circle').data(nodes)
+
+        svgNodes.enter()
+            .append('circle')
+            .attr('r', 10)
+            .merge(svgNodes)
+            .attr('cx', (d) => {
+                return d.x * this.scale
+            })
+            .attr('cy', (d) => {
+                return d.y * this.scale
+            })
+            .attr('transform', `translate(${(this.width * this.scale) / 2},${(this.height * this.scale) / 2})`)
+
+        svgNodes.exit().remove()
+    }
+
+    ticked(nodes, edges) {
+        this.updateEdges(edges)
+        this.updateNodes(nodes)
     }
 
     view() {
