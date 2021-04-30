@@ -7,29 +7,35 @@ export default class NodeLinkDiagramComponent extends Visualization {
     oninit(vnode) {
         super.oninit(vnode)
         this.scale = 3;
+        
     }
 
     oncreate(vnode) {
 
         this.width = 275;
-        this.height = 275;
+        this.height = 275;        
 
+        const persons = vnode.state.dataHandler.getPersons();        
+        
 
-        const persons = vnode.state.dataHandler.getPersons();
-        const emails = vnode.state.dataHandler.getEmails();
+        let email1 = vnode.state.dataHandler.getEmailDateByPercentile(0.1);
+        let email2 = vnode.state.dataHandler.getEmailDateByPercentile(0.3);
+        // Gets emails from 10% to 30% of the time
 
-        let nodes = persons.map(function (d, i) {
+        const emails = vnode.state.dataHandler.getEmailsByDate(email1, email2);
+        // console.log(emails)
+
+        let nodes = persons.map(function (d) {
             return {
-                id: parseInt(d.id)
+                id: d.id
             }
         });
 
         let edges = emails.map(function (d) {
             return {
-                source: parseInt(d.fromId),
-                target: parseInt(d.toId),
-                sentiment: parseFloat(d.sentiment)
-            }
+                source: d.fromId,
+                target: d.toId,
+                sentiment: d.sentiment            }
         })
 
         let node_link_diagram = d3.select('#node_link_diagram');
@@ -50,7 +56,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         let svgEdges = d3.select('svg').append('g')
             .selectAll('line')
             .data(edges)
-        console.log(this.scale)
+
         svgEdges.enter()
             .append('line')
             .merge(svgEdges)
