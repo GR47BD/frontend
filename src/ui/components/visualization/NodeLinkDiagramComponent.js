@@ -20,7 +20,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         let nodes = persons.map(function (d, i) {
             return {
-                id: parseInt(d)
+                id: parseInt(d.id)
             }
         });
 

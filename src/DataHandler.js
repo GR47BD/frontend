@@ -29,10 +29,31 @@ export default class DataHandler{
     getPersons(){
         // If personsData does not exist yet, define it
         if(typeof this.personsData == 'undefined'){
-            // Get only the fromId from the dataset
-            let duplicatePersons = this.rawData.map(item => item.fromId && item.toId); 
-            // Remove the duplicates and save to personsData
-            this.personsData = duplicatePersons.filter((item1, index, array) => array.findIndex(item2 => (item1 == item2)) === index); 
+
+            let persons = [];
+            for(let i = 0; i < this.rawData.length; i++){
+                // Checks if this emails fromId was already in the persons array
+                if(!persons.some(item => item.id === this.rawData[i].fromId)){
+                    // If not then add that person
+                    persons.push({
+                        id: this.rawData[i].fromId,
+                        email: this.rawData[i].email,
+                        jobtitle: this.rawData[i].fromJobtitle
+                    })
+                }
+                // Checks if this emails toId was already in the persons array
+                if(!persons.some(item => item.id === this.rawData[i].toId)){
+                    // If not then add that person
+                    persons.push({
+                        id: this.rawData[i].toId,
+                        email: this.rawData[i].email,
+                        jobtitle: this.rawData[i].fromJobtitle
+                    })
+                }                         
+
+
+            }
+            this.personsData = persons;
         }
 
         return this.personsData
@@ -69,5 +90,7 @@ export default class DataHandler{
     getEmailsForPerson(id){
         return this.rawData.filter(item => item.fromId == id || item.toId == id);
     }
+
+    
 
 }
