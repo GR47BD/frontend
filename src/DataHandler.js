@@ -7,17 +7,38 @@ import FilterTypes from "@/FilterTypes";
  */
 export default class DataHandler {
     constructor(){
+        /**
+         * The filters that are currently applied
+         */
         this.filters = [];
+        /**
+         * All the emails
+         */
         this.data = [];
+        /**
+         * The emails after applying the filters
+         */
         this.filteredData = [];
+        /**
+         * The emails after applying the filters and that are in the time span
+         */
         this.timedData = [];
+        /**
+         * The time span that selects the emails
+         */
         this.timeSpan = new TimeSpan({
             minTime: 0,
             maxTime: new Date().getTime(),
             startTime: 0,
             endTime: new Date().getTime()
         });
+        /**
+         * The job titles for each list of data
+         */
         this.jobTitles = {}
+        /**
+         * The persons for each list of data
+         */
         this.persons = {}
     }
 
@@ -271,6 +292,10 @@ export default class DataHandler {
         }        
     }
 
+    /**
+     * @param {String} name The specified selection
+     * @returns The data that matches the specified selection
+     */
     dataFromSelectionName(name) {
         if(name === "timed") return this.timedData;
         else if(name === "filtered") return this.filteredData;
