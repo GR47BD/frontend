@@ -94,6 +94,21 @@ export default class DataHandler{
         return this.personsData;
     }
 
+    /**
+     *
+    * @returns an array with all job titles
+    */
+    getJobTitles(){
+        const persons = this.getPersons();
+
+        if(typeof this.jobTitles == 'undefined'){
+             let duplicateJobTitles = persons.map(item => item.jobtitle);
+             this.jobTitles =  duplicateJobTitles.filter((item1, index, array) => array.findIndex(item2 => (item1 == item2)) === index);
+        }
+
+        return this.jobTitles;
+    }
+
     getEmails() {
         // If no parameters were used then just use the first and last data    
         return this.sortedDataByDate;
