@@ -1,21 +1,110 @@
 import jquery from "jquery-csv"
+import TimeSpan from "@/visualize/TimeSpan";
+import FilterTypes from "@/FilterTypes";
 
 /**
  * This class can return specific things from the given csv data
  */
-export default class DataHandler{
-    
-    // Stores rawData, formattedData, personsData, emails, sortedDataByDate
+export default class DataHandler {
+    constructor(){
+        this.filters = [];
+        this.data = [];
+        this.filteredData = [];
+        this.timedData = [];
+        this.timeSpan = new TimeSpan({});
+    }
 
     /**
+     * Adds a given dataset to list of data.
+     * @param {String} name The name of this dataset
      * @param {string} csvData  A string with the data of a csv file with as first line the expected variable 
      */
-    constructor(csvData){
-        this.rawData = this.csvConverter(csvData)
-        this.formatData(this.rawData)
+    add(name, csvData) {
+        const raw = this.csvConverter(csvData)
+        this.data.push(...this.formatData(raw, name))
+
         this.sortDataByDate()
+        this.update();
+    }
+
+    /**
+     * Removes all the data added by the given dataset
+     * @param {String} name The name of the dataset
+     */
+    remove(name) {
+        this.data = this.data.filter(item => item.orgin !== name);
+
+        this.update();
     }
     
+    /**
+     * Updates the data by re-applying the changed filters and selecting the data in the correct time span.
+     */
+    update() {
+        this.updateFiltered();
+        this.updatedTimed();
+    }
+
+    /**
+     * Updates the data by re-applying the filters.
+     */
+    updateFiltered() {
+        this.filteredData = [];
+        this.timedData = [];
+        this.nextIndex = 0;
+
+        for(const item of this.data) {
+            if(!this.meetsFilters(item)) continue;
+
+            this.filteredData.push(item);
+        }
+    }
+
+    /**
+     * Checks if the given item meets the filters that are set.
+     * @param {Object} item A data item
+     * @returns If the item meets the filters.
+     */
+    meetsFilters(item) {
+        for(const filter of this.filters) {
+            if(filter.type === FilterTypes.EQUAL && item[filter.column] !== filter.value) return false;
+            if(filter.type === FilterTypes.LESSER && item[filter.column] >= filter.value) return false;
+            if(filter.type === FilterTypes.GREATER && item[filter.column] <= filter.value) return false;
+            if(filter.type === FilterTypes.INCLUDES && !filter.value.includes(item[filter.column])) return false;
+        } 
+
+        return true;
+    }
+
+    /**
+     * Updates the data in timedData to match the timeSpan of this handler.
+     */
+    updatedTimed() {
+        const startIndex = 0;
+        const endIndex = 0;
+
+        for(let i = 0; i < this.timedData.length; i++) {
+            if(this.timedData[i].data.getTime() >= this.timeSpan.startTime) {
+                startIndex = i;
+
+                break;
+            }
+        }
+
+        this.timedData = this.timedData.slice(startIndex);
+
+        for(let i = this.nextIndex; i < this.filteredData.length; i++) {
+            if(this.timedData[i].data.getTime() >= this.timeSpan.endTime) {
+                endIndex = i-1;
+
+                break;
+            }
+        }
+
+        this.timedData.push(...this.filteredData.slice(this.nextIndex, endIndex));
+        this.nextIndex = endIndex + 1;
+    }
+
     /**
      * @param {string} csvData A string with the data of a csv file with as first line the expected variable 
      * @returns {array} an array of objects based on the given csv data
@@ -30,9 +119,9 @@ export default class DataHandler{
      * 
      * @param {array} raw  The raw data array
      */
-    formatData(raw){
-        this.formattedData = raw.map(item =>{
-            return{
+    formatData(raw, origin){
+        return raw.map(item => {
+            return {
                 date: new Date(item.date),
                 fromId: parseInt(item.fromId),
                 fromEmail: item.fromEmail,
@@ -41,7 +130,8 @@ export default class DataHandler{
                 toEmail: item.toEmail,
                 toJobtitle: item.toJobtitle,
                 messageType: item.messageType,
-                sentiment: parseFloat(item.sentiment)
+                sentiment: parseFloat(item.sentiment),
+                origin
             }
         });   
     }
@@ -159,7 +249,7 @@ export default class DataHandler{
      * @param {float} percentile 
      * @returns an email on the location in the array based on the variable percentile
      */
-    getEmailDateByPercentile(percentile){
+    getEmailDateByPercentile(percentile, selection = "timed"){
         if(this.sortedDataByDate.ascending){
             return this.sortedDataByDate[
                 Math.round((this.sortedDataByDate.length - 1) * (1-percentile))].date;
@@ -169,32 +259,12 @@ export default class DataHandler{
 
         }        
     }
-    
-    /**
-     * @returns the rawData array
-     */
-    getRawData(){
-        return this.rawData;
+
+    dataFromSelectionName(name) {
+        if(name === "timed") return this.timedData;
+        else if(name === "filtered") return this.filteredData;
+        else return this.data;
     }
-    /**
-     * @returns the formattedData array
-     */
-    getFormattedData(){
-        return this.formattedData;
-    }
-    
-    /**
-     * print the rawData array
-     */
-    printRawData(){
-        console.log(this.rawData);
-    }
-    /**
-     * print the formatted data array
-     */
-    printFormattedData(){
-        console.log(this.formattedData);
-    }    
 
     /**
      * @param {Date} date1 
@@ -202,9 +272,8 @@ export default class DataHandler{
      * @returns whether two dates are on the same day
      */
     datesAreEqual(date1, date2){
-        return date1.getFullYear() === date2.getFullYear() &&
+        return date1.getDate() === date2.getDate() &&
         date1.getMonth() === date2.getMonth() &&
-        date1.getDate() === date2.getDate();
-    }   
-
+        date1.getFullYear() === date2.getFullYear();
+    }
 }
