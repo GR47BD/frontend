@@ -12,8 +12,8 @@ export default class IndexView {
             //     <NodeLinkDiagramComponent></NodeLinkDiagramComponent>
             //     {/* The following line contains standard text. */} 
             // </div>
-            //m(NodeLinkDiagramComponent, {csvData: csvData})
-            m(HierarchicalEdgeComponent, {csvData: csvData})
+            m(NodeLinkDiagramComponent, {csvData: csvData})
+            // m(HierarchicalEdgeComponent, {csvData: csvData})
         );
         // HTML syntax that is returned may only contain one root element
         // So the following wouldn't be allowed:

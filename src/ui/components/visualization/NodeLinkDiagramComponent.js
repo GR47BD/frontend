@@ -1,13 +1,15 @@
 import m from "mithril";
 import * as d3 from "d3";
 import Visualization from "./Visualization";
+import { color } from "d3";
 
 export default class NodeLinkDiagramComponent extends Visualization {
 
+    
+
     oninit(vnode) {
         super.oninit(vnode)
-        this.scale = 3;
-        
+        this.scale = 3;        
     }
 
     oncreate(vnode) {
@@ -23,19 +25,24 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // Gets emails from 10% to 30% of the time
 
         const emails = vnode.state.dataHandler.getEmailsByDate(email1, email2);
-        // console.log(emails)
 
-        let nodes = persons.map(function (d) {
+        this.jobtitles = vnode.state.dataHandler.getJobTitles();
+        
+
+        let nodes = persons.map(function (person) {
             return {
-                id: d.id
+                id: person.id,
+                jobtitle: person.jobtitle
             }
         });
 
-        let edges = emails.map(function (d) {
+        console.log(nodes);
+
+        let edges = emails.map(function (email) {
             return {
-                source: d.fromId,
-                target: d.toId,
-                sentiment: d.sentiment            }
+                source: email.fromId,
+                target: email.toId,
+                sentiment: email.sentiment            }
         })
 
         let node_link_diagram = d3.select('#node_link_diagram');
@@ -44,7 +51,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .attr('height', this.height * this.scale);
 
         let simulation = d3.forceSimulation(nodes)
-            .force('charge', d3.forceManyBody)
+            .force('charge', d3.forceManyBody())
             .force('center', d3.forceCenter((this.width * this.scale) / 2), (this.height * this.scale) / 2)
             .force('link', d3.forceLink().id(function (d) {
                 return d.id
@@ -74,19 +81,21 @@ export default class NodeLinkDiagramComponent extends Visualization {
             })
             .attr('transform', `translate(${(this.width * this.scale) / 2},${(this.height * this.scale) / 2})`)
             .attr('stroke', function (edge) {
-                if(edge.sentiment < 0){
-                    return'rgb(255,0,0)'
-                } 
-                else if(edge.sentiment > 0){
-                    return 'rgb(0,255,0)'
-                }
-                else if(edge.sentiment == 0){
-                    return '#ffffff'
-                }
+                return '#c0c0c0'
+                // if(edge.sentiment < 0){
+                //     return'rgb(255,0,0)'
+                // } 
+                // else if(edge.sentiment > 0){
+                //     return 'rgb(0,255,0)'
+                // }
+                // else if(edge.sentiment == 0){
+                //     return '#000000'
+                // }
             })
             .attr('stroke-width', function (edge) {
-                return Math.abs(edge.sentiment) * 5
+                return 0.5 // Math.abs(edge.sentiment) * 5
             })
+            .attr('stroke-opacity', 0.5)
 
         svgEdges.exit().remove()
     }
@@ -96,7 +105,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         svgNodes.enter()
             .append('circle')
-            .attr('r', 10)
+            .attr('r', 5)
             .merge(svgNodes)
             .attr('cx', (d) => {
                 return d.x * this.scale
@@ -105,6 +114,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 return d.y * this.scale
             })
             .attr('transform', `translate(${(this.width * this.scale) / 2},${(this.height * this.scale) / 2})`)
+            .attr('fill', (node) => {
+                const scale = d3.scaleOrdinal(d3.schemeCategory10);
+                scale.domain(this.jobtitles);
+                return scale(node.jobtitle);
+            });
 
         svgNodes.exit().remove()
     }
