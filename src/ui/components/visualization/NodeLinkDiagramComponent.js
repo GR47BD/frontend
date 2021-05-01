@@ -1,6 +1,6 @@
 import m from "mithril";
 import * as d3 from "d3";
-import Visualization from "./Visualization";
+import Visualization from "@/visualize/Visualization";
 
 export default class NodeLinkDiagramComponent extends Visualization {
 
@@ -15,14 +15,14 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.width = 275;
         this.height = 275;        
 
-        const persons = vnode.state.dataHandler.getPersons();        
+        const persons = this.main.dataHandler.getPersons();        
         
 
-        let email1 = vnode.state.dataHandler.getEmailDateByPercentile(0.1);
-        let email2 = vnode.state.dataHandler.getEmailDateByPercentile(0.3);
+        let email1 = this.main.dataHandler.getEmailDateByPercentile(0.1);
+        let email2 = this.main.dataHandler.getEmailDateByPercentile(0.3);
         // Gets emails from 10% to 30% of the time
 
-        const emails = vnode.state.dataHandler.getEmailsByDate(email1, email2);
+        const emails = this.main.dataHandler.getEmailsByDate(email1, email2);
         // console.log(emails)
 
         let nodes = persons.map(function (d) {

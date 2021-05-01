@@ -1,4 +1,4 @@
-export default FilterTypes = {
+export default {
     EQUAL: 0,
     LESSER: 1,
     GREATER: 2,

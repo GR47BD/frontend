@@ -1,6 +1,6 @@
 import m from "mithril";
 import * as d3 from "d3";
-import Visualization from "./Visualization";
+import Visualization from "@/visualize/Visualization";
 
 // TODO: ADD scale
 
@@ -19,8 +19,8 @@ export default class HierarchicalEdgeComponent extends Visualization {
 
     createDonutGraph(vnode) {
 
-      const jobs = vnode.state.dataHandler.getJobTitles();
-      const persons = vnode.state.dataHandler.getPersons();
+      const jobs = this.main.dataHandler.getJobTitles();
+      const persons = this.main.dataHandler.getPersons();
 
       // Turning the jobs into appropriate objects
       var mapping = jobs.map(item => {
@@ -107,7 +107,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
     }
 
     createHierarchicalEdgeGraph(vnode){
-        const persons = vnode.state.dataHandler.getPersons();
+        const persons = this.main.getPersons();
 
         var diameter = 960,
             radius = diameter/2,

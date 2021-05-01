@@ -1,6 +1,7 @@
 import UIHandler from "@/ui/UIHandler";
 import Visualizer from "@/visualize/Visualizer";
 import DataHandler from "@/DataHandler";
+import csvData from "@/data/enron-v1.js";
 
 class Main {
     constructor() {
@@ -11,6 +12,8 @@ class Main {
     }
 
     start() {
+        this.dataHandler.add("enron-v1", csvData);
+        
         // We start rendering the ui.
         this.ui.render();
     }
@@ -18,3 +21,5 @@ class Main {
 
 const main = new Main();
 main.start();
+
+global.main = main;
