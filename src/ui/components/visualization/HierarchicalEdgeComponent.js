@@ -13,6 +13,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
     oncreate(vnode){
 
         this.createDonutGraph(vnode);
+        //this.createHierarchicalEdgeGraph(vnode);
         
     }
 
@@ -103,6 +104,36 @@ export default class HierarchicalEdgeComponent extends Visualization {
           })
           .style('font-family', 'Helvetica')
           .style('font-weight', 'bold');
+    }
+
+    createHierarchicalEdgeGraph(vnode){
+        const persons = vnode.state.dataHandler.getPersons();
+
+        var diameter = 960,
+            radius = diameter/2,
+            innerRadius = radius - 120;
+        
+        var cluster = d3.cluster()
+            .size([360, innerRadius]);
+        
+        var line = d3.lineRadial()  // unsure if this will work
+            .curve(d3.curveBundle.beta(0.85))  // tensions
+            .radius(function(d) {return d.y;})
+            .angle(function(d) {return d.x / 180 * Math.PI; });
+
+        var svg = d3.select("#hierarchical_div").append("svg")
+            .attr("width", diameter)
+            .attr("height", diameter)
+          .append("g")
+            .attr("transform", "translate(" + radius + "," + radius + ")");
+
+        let nodes = persons.map(function (d) {
+          return {
+            id: d.id
+          }
+        });
+
+
     }
 
 
