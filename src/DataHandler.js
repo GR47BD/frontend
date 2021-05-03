@@ -1,21 +1,144 @@
 import jquery from "jquery-csv"
+import TimeSpan from "@/visualize/TimeSpan";
+import FilterTypes from "@/FilterTypes";
 
 /**
  * This class can return specific things from the given csv data
  */
-export default class DataHandler{
-    
-    // Stores rawData, formattedData, personsData, emails, sortedDataByDate
+export default class DataHandler {
+    constructor(){
+        /**
+         * The filters that are currently applied
+         */
+        this.filters = [];
+        /**
+         * All the emails
+         */
+        this.data = [];
+        /**
+         * The emails after applying the filters
+         */
+        this.filteredData = [];
+        /**
+         * The emails after applying the filters and that are in the time span
+         */
+        this.timedData = [];
+        /**
+         * The time span that selects the emails
+         */
+        this.timeSpan = new TimeSpan({
+            minTime: 0,
+            maxTime: new Date().getTime(),
+            startTime: 0,
+            endTime: new Date().getTime()
+        });
+        /**
+         * The job titles for each list of data
+         */
+        this.jobTitles = {}
+        /**
+         * The persons for each list of data
+         */
+        this.persons = {}
+    }
 
     /**
+     * Adds a given dataset to list of data.
+     * @param {String} name The name of this dataset
      * @param {string} csvData  A string with the data of a csv file with as first line the expected variable 
      */
-    constructor(csvData){
-        this.rawData = this.csvConverter(csvData)
-        this.formatData(this.rawData)
-        this.sortDataByDate()
+    add(name, csvData) {
+        const raw = this.csvConverter(csvData)
+        this.data.push(...this.formatData(raw, name))
+        this.data = this.sortByDate("all")
+        this.update();
+    }
+
+    /**
+     * Removes all the data added by the given dataset
+     * @param {String} name The name of the dataset
+     */
+    remove(name) {
+        this.data = this.data.filter(item => item.orgin !== name);
+
+        this.update();
     }
     
+    /**
+     * Updates the data by re-applying the changed filters and selecting the data in the correct time span.
+     */
+    update() {
+        this.updateFiltered();
+        this.updatedTimed();
+    }
+
+    /**
+     * Updates the data by re-applying the filters.
+     */
+    updateFiltered() {
+        this.filteredData = [];
+        this.timedData = [];
+        this.nextIndex = 0;
+        this.jobTitles.filtered = undefined;
+        this.persons.filtered = undefined;
+        this.jobTitles.timed = undefined;
+        this.persons.timed = undefined;
+
+        for(const item of this.data) {
+            if(!this.meetsFilters(item)) continue;
+
+            this.filteredData.push(item);
+        }
+    }
+
+    /**
+     * Checks if the given item meets the filters that are set.
+     * @param {Object} item A data item
+     * @returns If the item meets the filters.
+     */
+    meetsFilters(item) {
+        for(const filter of this.filters) {
+            if(filter.type === FilterTypes.EQUAL && item[filter.column] !== filter.value) return false;
+            if(filter.type === FilterTypes.LESSER && item[filter.column] >= filter.value) return false;
+            if(filter.type === FilterTypes.GREATER && item[filter.column] <= filter.value) return false;
+            if(filter.type === FilterTypes.INCLUDES && !filter.value.includes(item[filter.column])) return false;
+        } 
+
+        return true;
+    }
+
+    /**
+     * Updates the data in timedData to match the timeSpan of this handler.
+     */
+    updatedTimed() {
+        let startIndex = 0;
+        let endIndex = 0;
+
+        for(let i = 0; i < this.timedData.length; i++) {
+            if(this.timedData[i] || this.timedData[i].date.getTime() >= this.timeSpan.startTime) {
+                startIndex = i;
+
+                break;
+            }
+        }
+
+        this.timedData = this.timedData.slice(startIndex);
+
+        for(let i = this.nextIndex; i < this.filteredData.length; i++) {
+            if(this.filteredData[i].date.getTime() <= this.timeSpan.endTime) {
+                endIndex = i;
+            }
+        }
+
+        console.log(startIndex, this.nextIndex, endIndex);
+        
+        this.timedData.push(...this.filteredData.slice(this.nextIndex, endIndex));
+        this.nextIndex = endIndex + 1;
+
+        this.jobTitles.timed = undefined;
+        this.persons.timed = undefined;
+    }
+
     /**
      * @param {string} csvData A string with the data of a csv file with as first line the expected variable 
      * @returns {array} an array of objects based on the given csv data
@@ -30,9 +153,9 @@ export default class DataHandler{
      * 
      * @param {array} raw  The raw data array
      */
-    formatData(raw){
-        this.formattedData = raw.map(item =>{
-            return{
+    formatData(raw, origin){
+        return raw.map(item => {
+            return {
                 date: new Date(item.date),
                 fromId: parseInt(item.fromId),
                 fromEmail: item.fromEmail,
@@ -41,22 +164,17 @@ export default class DataHandler{
                 toEmail: item.toEmail,
                 toJobtitle: item.toJobtitle,
                 messageType: item.messageType,
-                sentiment: parseFloat(item.sentiment)
+                sentiment: parseFloat(item.sentiment),
+                origin
             }
         });   
     }
 
     /**
-     * Sorts the data, by default in decreasing order
-     * @param {boolean} ascending 
+     * Sorts the data by date.
      */
-    sortDataByDate(ascending = false){
-        if(ascending){
-            this.sortedDataByDate = this.formattedData.sort((a, b) => b.date - a.date);   
-        }else{
-            this.sortedDataByDate = this.formattedData.sort((a, b) => a.date - b.date);   
-        }
-        this.sortedDataByDate.ascending = ascending;
+     sortByDate(selection = "timed"){
+        return this.dataFromSelectionName(selection).sort((a, b) => b.date - a.date);
     }
 
     /**
@@ -64,65 +182,71 @@ export default class DataHandler{
      * @returns an array with an object which stores id's, email, and jobTitle of everyone in the company
      *
      */
-    getPersons(){
-        // If personsData does not exist yet, define it
-        if(typeof this.personsData == 'undefined'){
+    getPersons(selection = "timed"){
+        const data = this.dataFromSelectionName(selection);
 
+        // If personsData does not exist yet, define it
+        if(this.persons[selection] === undefined){
             let persons = [];
-            for(let i = 0; i < this.formattedData.length; i++){
+
+            for(let i = 0; i < data.length; i++){
                 // Checks if this emails fromId was already in the persons array
-                if(!persons.some(item => item.id === this.formattedData[i].fromId)){
+                if(!persons.some(item => item.id === data[i].fromId)){
                     // If not then add that person
                     persons.push({
-                        id: this.formattedData[i].fromId,
-                        email: this.formattedData[i].fromEmail,
-                        jobtitle: this.formattedData[i].fromJobtitle
+                        id: data[i].fromId,
+                        email: data[i].fromEmail,
+                        jobtitle: data[i].fromJobtitle
                     });
                 }
                 // Checks if this emails toId was already in the persons array
-                if(!persons.some(item => item.id === this.formattedData[i].toId)){
+                if(!persons.some(item => item.id === data[i].toId)){
                     // If not then add that person
                     persons.push({
-                        id: this.formattedData[i].toId,
-                        email: this.formattedData[i].toEmail,
-                        jobtitle: this.formattedData[i].toJobtitle
+                        id: data[i].toId,
+                        email: data[i].toEmail,
+                        jobtitle: data[i].toJobtitle
                     });
                 }                         
             }
-            this.personsData = persons;
+
+            this.persons[selection] = persons;
         }
-        return this.personsData;
+
+        return this.persons[selection];
     }
 
     /**
      *
     * @returns an array with all job titles
     */
-    getJobTitles(){
-        const persons = this.getPersons();
+    getJobTitles(selection = "timed"){
+        const persons = this.getPersons(selection);
 
-        if(typeof this.jobTitles == 'undefined'){
+        if(this.jobTitles[selection] === undefined){
              let duplicateJobTitles = persons.map(item => item.jobtitle);
-             this.jobTitles =  duplicateJobTitles.filter((item1, index, array) => array.findIndex(item2 => (item1 == item2)) === index);
+             this.jobTitles[selection] = duplicateJobTitles.filter((item1, index, array) => {
+                 return array.findIndex(item2 => (item1 == item2)) === index});
         }
 
-        return this.jobTitles;
+        return this.jobTitles[selection];
     }
 
-    getEmails() {
-        // If no parameters were used then just use the first and last data    
-        return this.sortedDataByDate;
+    getEmails(selection = "timed") {
+        return this.dataFromSelectionName(selection);
     }
 
     /**
      * 
      * @returns an array of all emails bounded 
      */
-    getEmailsByDate(firstDate, lastDate){
-        let firstDateIndex = this.sortedDataByDate.findIndex(item => this.datesAreEqual(item.date, firstDate));
-        let lastDateIndex = this.sortedDataByDate.findIndex(item => this.datesAreEqual(item.date, lastDate));
+    getEmailsByDate(firstDate, lastDate, selection = "timed"){
+        const data = this.dataFromSelectionName(selection);
 
-        return this.sortedDataByDate.slice(firstDateIndex, lastDateIndex+1); 
+        let firstDateIndex = data.findIndex(item => this.datesAreEqual(item.date, firstDate));
+        let lastDateIndex = data.findIndex(item => this.datesAreEqual(item.date, lastDate));
+
+        return data.slice(firstDateIndex, lastDateIndex+1); 
     }
 
      /**
@@ -130,8 +254,8 @@ export default class DataHandler{
      * @param {string} id the id of a person
      * @returns {array} an array of all the emails sent from and to a person based on its id
      */
-      getEmailsForPerson(id){
-        return this.formattedData.filter(item => item.fromId == id || item.toId == id);
+      getEmailsForPerson(id, selection = "timed"){
+        return this.dataFromSelectionName(selection).filter(item => item.fromId == id || item.toId == id);
     }    
 
 
@@ -139,19 +263,17 @@ export default class DataHandler{
      * 
      * @returns the date of the first email in the data
      */
-    getFirstEmailDate(){
-        // the first and last date are based on whether the array is ascending
-        return this.sortedDataByDate.ascending ? 
-                this.sortedDataByDate[this.sortedDataByDate.length - 1] : this.sortedDataByDate[0];       
+    getFirstEmailDate(selection = "timed"){
+        const data = this.dataFromSelectionName(selection);
+
+        return data[data.length - 1];
     }
 
     /**
      * @returns the date of the last email in the data
      */
-    getLastEmailDate(){
-        // the first and last date are based on whether the array is ascending
-        return this.sortedDataByDate.ascending ? 
-                this.sortedDataByDate[0] : this.sortedDataByDate[this.sortedDataByDate.length - 1];
+    getLastEmailDate(selection = "timed"){
+        return this.dataFromSelectionName(selection)[0];
     }
 
     /**
@@ -159,42 +281,26 @@ export default class DataHandler{
      * @param {float} percentile 
      * @returns an email on the location in the array based on the variable percentile
      */
-    getEmailDateByPercentile(percentile){
-        if(this.sortedDataByDate.ascending){
-            return this.sortedDataByDate[
-                Math.round((this.sortedDataByDate.length - 1) * (1-percentile))].date;
+    getEmailDateByPercentile(percentile, selection = "timed"){
+        const data = this.dataFromSelectionName(selection);
+
+        if(data.ascending){
+            return data[Math.round((data.length - 1) * (1-percentile))].date;
         }else{
-            return this.sortedDataByDate[
-                Math.round((this.sortedDataByDate.length - 1) * percentile)].date;
+            return data[Math.round((data.length - 1) * percentile)].date;
 
         }        
     }
-    
+
     /**
-     * @returns the rawData array
+     * @param {String} name The specified selection
+     * @returns The data that matches the specified selection
      */
-    getRawData(){
-        return this.rawData;
+    dataFromSelectionName(name) {
+        if(name === "timed") return this.timedData;
+        else if(name === "filtered") return this.filteredData;
+        else return this.data;
     }
-    /**
-     * @returns the formattedData array
-     */
-    getFormattedData(){
-        return this.formattedData;
-    }
-    
-    /**
-     * print the rawData array
-     */
-    printRawData(){
-        console.log(this.rawData);
-    }
-    /**
-     * print the formatted data array
-     */
-    printFormattedData(){
-        console.log(this.formattedData);
-    }    
 
     /**
      * @param {Date} date1 
@@ -202,9 +308,8 @@ export default class DataHandler{
      * @returns whether two dates are on the same day
      */
     datesAreEqual(date1, date2){
-        return date1.getFullYear() === date2.getFullYear() &&
+        return date1.getDate() === date2.getDate() &&
         date1.getMonth() === date2.getMonth() &&
-        date1.getDate() === date2.getDate();
-    }   
-
+        date1.getFullYear() === date2.getFullYear();
+    }
 }

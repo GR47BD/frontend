@@ -1,5 +1,5 @@
 import m from "mithril";
-import IndexView from "@/ui/views/index";
+import IndexView from "@/ui/views/IndexView";
 
 export default class UIHandler {
 	constructor(main) {
@@ -10,8 +10,6 @@ export default class UIHandler {
 	render() {
 		// Here we route multiple views to their respective url handles. We then 'mount' this to
 		// the body, which means we add them as a child of the body.
-		m.route(document.body, "/", {
-			"/": IndexView
-		});
+		m.render(document.body,  m(IndexView, {main: this.main}));
 	}
 }

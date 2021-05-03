@@ -1,11 +1,10 @@
 import m from "mithril";
-import TestComponent from "@/ui/components/test";
-import NodeLinkDiagramComponent from "../components/visualization/NodeLinkDiagramComponent";
-import csvData from "@/data/enron-v1.js";
-import HierarchicalEdgeComponent from "../components/visualization/HierarchicalEdgeComponent";
+import TestComponent from "@/ui/components/TestComponent";
+import NodeLinkDiagramComponent from "@/ui/components/visualization/NodeLinkDiagramComponent";
+import HierarchicalEdgeComponent from "@/ui/components/visualization/HierarchicalEdgeComponent";
 
 export default class IndexView {
-    view() {
+    view(vnode) {
         return (
             // <div> 
             //     {/* In the next line the component TestComponent is loaded in as HTML element */}
