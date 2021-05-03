@@ -55,10 +55,6 @@ module.exports = {
 		new HtmlWebpackPlugin({
 			template: "./src/index.html",
 			inject: 'body'
-		}),
-		// The encoding plugin makes sure the correct encoding is used throughout all compilations.
-		new EncodingPlugin({
-			encoding: 'utf-16'
 		})
 	],
 	resolve: {
@@ -69,6 +65,9 @@ module.exports = {
 			"$": path.resolve(__dirname, "../")
 		}
 	},
+    cache: {
+        type: 'memory'
+    },
 	// This is a website, thus we compile it as a website
 	target: "web"
 }

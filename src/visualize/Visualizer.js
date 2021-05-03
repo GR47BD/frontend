@@ -4,8 +4,9 @@ import Animator from "@/visualize/Animator";
  * This class is in charge of all the visualizations and the animator.
  */
 export default class Visualizer {
-    constructor() {
-        this.animator = new Animator();
+    constructor(main) {
+        this.main = main;
+        this.animator = new Animator(main, {speed: 5});
         this.visualizations = new Map();
     }
 
@@ -30,5 +31,21 @@ export default class Visualizer {
      */
     deleteVisualization(name) {
         this.visualizations.delete(name);
+    }
+
+    update() {
+        if(this.main.timebar) this.main.timebar.update();
+
+        for(const visualization of this.visualizations.values()) {
+            visualization.update();
+        }
+    }
+
+    step() {
+        if(this.main.timebar) this.main.timebar.update();
+
+        for(const visualization of this.visualizations.values()) {
+            visualization.step();
+        }
     }
 }

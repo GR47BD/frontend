@@ -15,4 +15,9 @@ export default class Visualization {
      * Called when the data has changed and the visualization has to be redrawn.
      */
     update() {}
+
+    /**
+     * Called when there has been a step through the timespan.
+     */
+     step() {}
 }

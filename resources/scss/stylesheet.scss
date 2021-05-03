@@ -1,0 +1,12 @@
+@import '~nouislider/dist/nouislider.css';
+
+.timebar {
+	display: flex;
+	flex-direction: row;
+
+	.dates {}
+
+	.slidebar {
+		width: 300px;
+	}
+}

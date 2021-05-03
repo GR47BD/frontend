@@ -28,4 +28,11 @@ export default class TimeSpan {
     hasEnded() {
         return this.endTime === this.maxTime;
     }
+
+    /**
+     * @returns The current difference between the end time and the start time.
+     */
+    diff() {
+        return this.endTime - this.startTime;
+    }
 }
