@@ -12,8 +12,8 @@ export default class HierarchicalEdgeComponent extends Visualization {
 
     oncreate(vnode){
 
-        this.createDonutGraph(vnode);
-        //this.createHierarchicalEdgeGraph(vnode);
+        //this.createDonutGraph(vnode);
+        this.createHierarchicalEdgeGraph(vnode);
         
     }
 
@@ -106,33 +106,134 @@ export default class HierarchicalEdgeComponent extends Visualization {
           .style('font-weight', 'bold');
     }
 
+    // A lot to improve on, but it works for now
     createHierarchicalEdgeGraph(vnode){
-        const persons = this.main.getPersons();
+      var diameter = 820,
+      radius = diameter / 2,
+      innerRadius = radius - 120;
+  
+      var cluster = d3.cluster()
+          .size([360, innerRadius]);
 
-        var diameter = 960,
-            radius = diameter/2,
-            innerRadius = radius - 120;
-        
-        var cluster = d3.cluster()
-            .size([360, innerRadius]);
-        
-        var line = d3.lineRadial()  // unsure if this will work
-            .curve(d3.curveBundle.beta(0.85))  // tensions
-            .radius(function(d) {return d.y;})
-            .angle(function(d) {return d.x / 180 * Math.PI; });
+      var line = d3.radialLine()
+          .curve(d3.curveBundle.beta(0.85))
+          .radius(function(d) { return d.y; })
+          .angle(function(d) { return d.x / 180 * Math.PI; });
 
-        var svg = d3.select("#hierarchical_div").append("svg")
-            .attr("width", diameter)
-            .attr("height", diameter)
-          .append("g")
-            .attr("transform", "translate(" + radius + "," + radius + ")");
+      var svg = d3.select("#hierarchical_div").append("svg")
+          .attr("width", diameter)
+          .attr("height", diameter)
+        .append("g")
+          .attr("transform", "translate(" + radius + "," + radius + ")");
 
-        let nodes = persons.map(function (d) {
-          return {
-            id: d.id
+      var link = svg.append("g").selectAll("link"),
+         node = svg.append("g").selectAll("node");
+
+      const persons = this.main.dataHandler.getPersons();
+
+      // Creating the structure of the hierarchy needed
+      var mapping = persons.map(item =>{
+        return {
+            "name": "job." + item.jobtitle + "." + item.id,
+            "size": 1,
+            "imports": []
+        }
+      });
+
+      let email1 = this.main.dataHandler.getEmailDateByPercentile(0.1);
+      let email2 = this.main.dataHandler.getEmailDateByPercentile(0.105);
+      // Get emails from 10% to 10.5% of the time
+      const emails = this.main.dataHandler.getEmailsByDate(email1, email2);
+      // Mapping emails to a more appropriate object
+      let emails_sent = emails.map(item => {
+        return {
+          "source": item.fromId,
+          "target_details": "job." + item.toJobtitle + "." + item.toId
+        }
+      });
+
+      // Create appropriate data type, so that we can create a heirarchy out of it
+      // Push all emails sent by a person into the list of imports(emails sent) for this person
+      for (var person in mapping){
+        for (var email in emails_sent){
+          if (mapping[person].name.substring(mapping[person].name.lastIndexOf('.')+1) == emails_sent[email].source){
+            mapping[person].imports.push(emails_sent[email].target_details);
           }
-        });
+        }
+      }
+      
+      var classes = mapping;
+      
+      // Create the graph
+      var root = packageHierarchy(classes)
+          .sum(function(d) { return d.size; });
+      cluster(root);
 
+      // Create the links
+      link = link
+        .data(packageImports(root.leaves()))
+        .enter().append("path")
+          .each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
+          .attr("d", line)
+          .style('stroke', 'steelblue')
+          .style('stroke-opacity', 0.5)
+          .style('fill', 'none')
+          .style('pointer-events', 'none');
+      
+      // Create the nodes     
+      node = node
+        .data(root.leaves())
+        .enter().append("text")
+          .attr("dy", "0.31em")
+          .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+          .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+          .text(function(d) { return d.data.key; })
+          .style('font', 8 + " px")
+          .style('font-family', 'Helvetica');
+
+      // Create the hierarchy from node names
+      function packageHierarchy(classes) {
+        var map = {};
+      
+        function find(name, data) {
+          var node = map[name], i;
+          if (!node) {
+            node = map[name] = data || {name: name, children: []};
+            if (name.length) {
+              node.parent = find(name.substring(0, i = name.lastIndexOf(".")));
+              node.parent.children.push(node);
+              node.key = name.substring(i + 1);
+            }
+          }
+          return node;
+        }
+      
+        classes.forEach(function(d) {
+          find(d.name, d);
+        });
+      
+        return d3.hierarchy(map[""]);
+      }
+
+      // Return a list of imports for the given array of nodes.
+      function packageImports(nodes) {
+        var map = {},
+            imports = [];
+      
+        // Compute a map from name to node.
+        nodes.forEach(function(d) {
+          map[d.data.name] = d;
+        });
+      
+        // For each import, construct a link from the source to target node.
+        nodes.forEach(function(d) {
+          if (d.data.imports) d.data.imports.forEach(function(i) {
+            imports.push(map[d.data.name].path(map[i]));
+          });
+        });
+      
+        return imports;
+      }
 
     }
 
