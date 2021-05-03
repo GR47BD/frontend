@@ -11,7 +11,10 @@ export default class IndexView {
             //     <NodeLinkDiagramComponent></NodeLinkDiagramComponent>
             //     {/* The following line contains standard text. */} 
             // </div>
-            m(NodeLinkDiagramComponent, {csvData: csvData})
+            m(NodeLinkDiagramComponent, {main: vnode.attrs.main})
+            // m(HierarchicalEdgeComponent, {main: vnode.attrs.main})
+
+            
             // m(HierarchicalEdgeComponent, {csvData: csvData})
         );
         // HTML syntax that is returned may only contain one root element

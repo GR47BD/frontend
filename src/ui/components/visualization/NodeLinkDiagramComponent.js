@@ -1,6 +1,7 @@
 import m from "mithril";
 import * as d3 from "d3";
 import Visualization from "@/visualize/Visualization";
+import { svg } from "d3";
 
 export default class NodeLinkDiagramComponent extends Visualization {
 
@@ -20,13 +21,13 @@ export default class NodeLinkDiagramComponent extends Visualization {
         
 
         let email1 = this.main.dataHandler.getEmailDateByPercentile(0.1);
-        let email2 = this.main.dataHandler.getEmailDateByPercentile(0.3);
+        let email2 = this.main.dataHandler.getEmailDateByPercentile(0.9);
         // Gets emails from 10% to 30% of the time
 
         const emails = this.main.dataHandler.getEmailsByDate(email1, email2);
         // console.log(emails)
 
-        this.jobtitles = vnode.state.dataHandler.getJobTitles();
+        this.jobtitles = this.main.dataHandler.getJobTitles();
         
 
         let nodes = persons.map(function (person) {
@@ -38,35 +39,49 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         console.log(nodes);
 
-        let edges = emails.map(function (email) {
+        let filteredEmails = emails.filter((item1,index,array)=>array.findIndex(item2=>(item1.fromId === item2.fromId && item1.toId === item2.toId))===index)
+
+
+
+        let edges = filteredEmails.map(function (email) {
             return {
                 source: email.fromId,
                 target: email.toId,
                 sentiment: email.sentiment            }
         })
 
+
+        console.log(edges);
+
         let node_link_diagram = d3.select('#node_link_diagram');
-        node_link_diagram.append('svg')
+        this.svg = node_link_diagram.append('svg')
             .attr('width', this.width * this.scale)
-            .attr('height', this.height * this.scale);
+            .attr('height', this.height * this.scale)
+            .call(d3.zoom().extent([[0, 0], [this.width, this.height]])
+            .scaleExtent([1, 8]).on('zoom', ({transform}) => {
+                this.svg.attr('transform', transform)
+        }));
+            
+        this.svgEdges = d3.select('svg').append('g')
+            .selectAll('line').data(edges)
+            
 
         let simulation = d3.forceSimulation(nodes)
-            .force('charge', d3.forceManyBody())
-            .force('center', d3.forceCenter((this.width * this.scale) / 2), (this.height * this.scale) / 2)
+            // .force('charge', d3.forceManyBody())
+            // .force('center', d3.forceCenter((this.width * this.scale) / 2), (this.height * this.scale) / 2)
             .force('link', d3.forceLink().id(function (d) {
                 return d.id
             }).links(edges))
             .on('tick', this.ticked(nodes, edges));
     }
 
-    updateEdges(edges) {
-        let svgEdges = d3.select('svg').append('g')
-            .selectAll('line')
-            .data(edges)
+    
 
-        svgEdges.enter()
+    updateEdges(edges) {
+        
+        this.svgEdges.enter()
             .append('line')
-            .merge(svgEdges)
+            .merge(this.svgEdges)
             .attr('x1', (edge) => {
                 return edge.source.x * this.scale
             })
@@ -95,9 +110,9 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .attr('stroke-width', function (edge) {
                 return 0.5 // Math.abs(edge.sentiment) * 5
             })
-            .attr('stroke-opacity', 0.5)
+            // .attr('stroke-opacity', 0.5)
 
-        svgEdges.exit().remove()
+        this.svgEdges.exit().remove()
     }
 
     updateNodes(nodes) {
@@ -127,6 +142,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.updateEdges(edges)
         this.updateNodes(nodes)
     }
+
 
     view() {
         return (
