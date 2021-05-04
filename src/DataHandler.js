@@ -132,8 +132,6 @@ export default class DataHandler {
      * @param {Boolean} timedOnly If the only change to the data was a step.
      */
     updateTimed(timedOnly = false) {
-        console.time('total');
-
         let newFirstIndex = 0;
         let newLastIndex = 0;
 
@@ -194,8 +192,6 @@ export default class DataHandler {
         this.jobTitles.timed = undefined;
         this.persons.timed = undefined;
 
-        console.timeEnd('total');
-
         if(timedOnly) {
             this.main.visualizer.step();
         }
@@ -253,7 +249,7 @@ export default class DataHandler {
 
             for(let i = 0; i < data.length; i++){
                 // Checks if this emails fromId was already in the persons array
-                if(!persons.some(item => item.id === data[i].fromId)){
+                if(!persons.some(item => item.id === data[i].fromId)) {
                     // If not then add that person
                     persons.push({
                         id: data[i].fromId,
