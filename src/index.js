@@ -7,8 +7,8 @@ class Main {
     constructor() {
         // We create the ui handler class and add it to the main class.
         this.ui = new UIHandler(this);
-        this.visualizer = new Visualizer();
-        this.dataHandler = new DataHandler();
+        this.visualizer = new Visualizer(this);
+        this.dataHandler = new DataHandler(this);
     }
 
     start() {

@@ -1,0 +1,19 @@
+@import '~nouislider/dist/nouislider.css';
+
+.timebar {
+	display: flex;
+	flex-direction: row;
+
+	.dates {}
+
+	.slidebar {
+		width: 300px;
+	}
+}
+
+.hier-stroke {
+	stroke: steelblue;
+	stroke-opacity: 0.05;
+	fill: none;
+	pointer-events: none;
+}

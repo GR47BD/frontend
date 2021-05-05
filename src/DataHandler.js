@@ -6,7 +6,9 @@ import FilterTypes from "@/FilterTypes";
  * This class can return specific things from the given csv data
  */
 export default class DataHandler {
-    constructor(){
+    constructor(main){
+        this.main = main;
+
         /**
          * The filters that are currently applied
          */
@@ -27,10 +29,10 @@ export default class DataHandler {
          * The time span that selects the emails
          */
         this.timeSpan = new TimeSpan({
-            minTime: 0,
-            maxTime: new Date().getTime(),
-            startTime: 0,
-            endTime: new Date().getTime()
+            minTime: undefined,
+            maxTime: undefined,
+            startTime: undefined,
+            endTime: undefined
         });
         /**
          * The job titles for each list of data
@@ -50,7 +52,8 @@ export default class DataHandler {
     add(name, csvData) {
         const raw = this.csvConverter(csvData)
         this.data.push(...this.formatData(raw, name))
-        this.data = this.sortByDate("all")
+        this.data = this.sortByDate("all");
+
         this.update();
     }
 
@@ -69,7 +72,7 @@ export default class DataHandler {
      */
     update() {
         this.updateFiltered();
-        this.updatedTimed();
+        this.updateTimed();
     }
 
     /**
@@ -78,7 +81,8 @@ export default class DataHandler {
     updateFiltered() {
         this.filteredData = [];
         this.timedData = [];
-        this.nextIndex = 0;
+        this.firstIndex = 0;
+        this.lastIndex = 0;
         this.jobTitles.filtered = undefined;
         this.persons.filtered = undefined;
         this.jobTitles.timed = undefined;
@@ -89,6 +93,22 @@ export default class DataHandler {
 
             this.filteredData.push(item);
         }
+
+        const startTime = this.getFirstEmailDate('filtered').date.getTime();
+        const endTime = this.getLastEmailDate('filtered').date.getTime();
+
+        if(this.timeSpan.minTime !== startTime) {
+            this.timeSpan.startTime = startTime;
+        }
+
+        if(this.timeSpan.maxTime !== endTime) {
+            this.timeSpan.endTime = endTime;
+        }
+
+        this.timeSpan.minTime = startTime;
+        this.timeSpan.maxTime = endTime;
+
+        this.main.visualizer.update();
     }
 
     /**
@@ -109,34 +129,72 @@ export default class DataHandler {
 
     /**
      * Updates the data in timedData to match the timeSpan of this handler.
+     * @param {Boolean} timedOnly If the only change to the data was a step.
      */
-    updatedTimed() {
-        let startIndex = 0;
-        let endIndex = 0;
+    updateTimed(timedOnly = false) {
+        let newFirstIndex = 0;
+        let newLastIndex = 0;
 
-        for(let i = 0; i < this.timedData.length; i++) {
-            if(this.timedData[i] || this.timedData[i].date.getTime() >= this.timeSpan.startTime) {
-                startIndex = i;
+        const firstDirection = this.lastIndex > 0 && this.timedData[0].date.getTime() <= this.timeSpan.startTime;
+        const lastDirection = this.lastIndex === 0 || this.timedData[this.timedData.length-1].date.getTime() <= this.timeSpan.endTime;
 
+        if(firstDirection) {
+            for(let i = this.firstIndex; i < this.lastIndex; i++) {
+                if(this.filteredData[i].date.getTime() < this.timeSpan.startTime) continue;
+
+                newFirstIndex = i;
                 break;
             }
+
+            this.timedData = this.timedData.slice(newFirstIndex-this.firstIndex);
         }
-
-        this.timedData = this.timedData.slice(startIndex);
-
-        for(let i = this.nextIndex; i < this.filteredData.length; i++) {
-            if(this.filteredData[i].date.getTime() <= this.timeSpan.endTime) {
-                endIndex = i;
+        else {
+            for(let i = this.firstIndex; i >= 0; i--) {
+                if(this.filteredData[i].date.getTime() >= this.timeSpan.startTime) continue;
+                
+                newFirstIndex = i+1;
+                break;
             }
+
+            const oldData = this.timedData;
+
+            this.timedData = this.filteredData.slice(newFirstIndex, this.firstIndex)
+            this.timedData.push(...oldData);
         }
 
-        console.log(startIndex, this.nextIndex, endIndex);
-        
-        this.timedData.push(...this.filteredData.slice(this.nextIndex, endIndex));
-        this.nextIndex = endIndex + 1;
+        if(lastDirection) {
+            for(let i = this.lastIndex; i < this.filteredData.length; i++) {
+                if(i === this.filteredData.length-1) newLastIndex = i;
+                if(this.filteredData[i].date.getTime() <= this.timeSpan.endTime) continue;
+                newLastIndex = i-1;
+                break;
+            }
+
+            const oldData = this.timedData;
+            
+            this.timedData = this.filteredData.slice(this.lastIndex+1, newLastIndex+1);
+            this.timedData.unshift(...oldData);
+        }
+        else {
+            for(let i = this.lastIndex; i >= this.firstIndex; i--) {
+                if(this.filteredData[i].date.getTime() > this.timeSpan.endTime) continue;
+                
+                newLastIndex = i;
+                break;
+            }
+
+            this.timedData = this.timedData.slice(this.lastIndex-newLastIndex);
+        }
+
+        this.firstIndex = newFirstIndex;
+        this.lastIndex = newLastIndex;
 
         this.jobTitles.timed = undefined;
         this.persons.timed = undefined;
+
+        if(timedOnly) {
+            this.main.visualizer.step();
+        }
     }
 
     /**
@@ -174,7 +232,7 @@ export default class DataHandler {
      * Sorts the data by date.
      */
      sortByDate(selection = "timed"){
-        return this.dataFromSelectionName(selection).sort((a, b) => b.date - a.date);
+        return this.dataFromSelectionName(selection).sort((a, b) => a.date - b.date);
     }
 
     /**
@@ -191,7 +249,7 @@ export default class DataHandler {
 
             for(let i = 0; i < data.length; i++){
                 // Checks if this emails fromId was already in the persons array
-                if(!persons.some(item => item.id === data[i].fromId)){
+                if(!persons.some(item => item.id === data[i].fromId)) {
                     // If not then add that person
                     persons.push({
                         id: data[i].fromId,
@@ -263,17 +321,17 @@ export default class DataHandler {
      * 
      * @returns the date of the first email in the data
      */
-    getFirstEmailDate(selection = "timed"){
-        const data = this.dataFromSelectionName(selection);
-
-        return data[data.length - 1];
+    getFirstEmailDate(selection = "timed") {
+        return this.dataFromSelectionName(selection)[0];
     }
 
     /**
      * @returns the date of the last email in the data
      */
     getLastEmailDate(selection = "timed"){
-        return this.dataFromSelectionName(selection)[0];
+        const data = this.dataFromSelectionName(selection);
+
+        return data[data.length - 1];
     }
 
     /**

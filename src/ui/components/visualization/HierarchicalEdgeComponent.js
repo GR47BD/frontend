@@ -108,6 +108,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
 
     // A lot to improve on, but it works for now
     createHierarchicalEdgeGraph(vnode){
+      console.time('total');
       var diameter = 820,
       radius = diameter / 2,
       innerRadius = radius - 120;
@@ -115,14 +116,16 @@ export default class HierarchicalEdgeComponent extends Visualization {
       var cluster = d3.cluster()
           .size([360, innerRadius]);
 
-      var line = d3.radialLine()
+      var line = d3.lineRadial()
           .curve(d3.curveBundle.beta(0.85))
           .radius(function(d) { return d.y; })
-          .angle(function(d) { return d.x / 180 * Math.PI; });
+          .angle(function(d) { return d.x / 180 * 3.1415; });
 
       var svg = d3.select("#hierarchical_div").append("svg")
           .attr("width", diameter)
           .attr("height", diameter)
+          .attr("shape-rendering", "optimizeSpeed") // "optimizeSpeed" shaves off about 100ms per render, but looks worse than "geometricPrecision"
+          .attr("image-rendering", "optimizeSpeed")
         .append("g")
           .attr("transform", "translate(" + radius + "," + radius + ")");
 
@@ -132,13 +135,15 @@ export default class HierarchicalEdgeComponent extends Visualization {
       const persons = this.main.dataHandler.getPersons();
 
       // Creating the structure of the hierarchy needed
-      var mapping = persons.map(item =>{
-        return {
-            "name": "job." + item.jobtitle + "." + item.id,
+      var mapping = new Map();
+
+      for(const person of persons) {
+        mapping.set(person.id, {
+            "name": "job." + person.jobtitle + "." + person.id,
             "size": 1,
             "imports": []
-        }
-      });
+        });
+      }
 
       let email1 = this.main.dataHandler.getEmailDateByPercentile(0.1);
       let email2 = this.main.dataHandler.getEmailDateByPercentile(0.105);
@@ -154,15 +159,20 @@ export default class HierarchicalEdgeComponent extends Visualization {
 
       // Create appropriate data type, so that we can create a heirarchy out of it
       // Push all emails sent by a person into the list of imports(emails sent) for this person
-      for (var person in mapping){
+      /*for (var person in mapping){
         for (var email in emails_sent){
           if (mapping[person].name.substring(mapping[person].name.lastIndexOf('.')+1) == emails_sent[email].source){
             mapping[person].imports.push(emails_sent[email].target_details);
           }
         }
+      }*/
+      for(var email of emails_sent) {
+          const person = mapping.get(email.source);
+          if(person === undefined) break;
+          person.imports.push(email.target_details);
       }
       
-      var classes = mapping;
+      var classes = Array.from(mapping.values());
       
       // Create the graph
       var root = packageHierarchy(classes)
@@ -175,10 +185,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
         .enter().append("path")
           .each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
           .attr("d", line)
-          .style('stroke', 'steelblue')
-          .style('stroke-opacity', 0.5)
-          .style('fill', 'none')
-          .style('pointer-events', 'none');
+          .attr("class", "hier-stroke");
       
       // Create the nodes     
       node = node
