@@ -6,6 +6,7 @@ import TimebarComponent from "../components/TimebarComponent";
 
 export default class IndexView {
     view(vnode) {
+        
         return (
             // <div> 
             //     {/* In the next line the component TestComponent is loaded in as HTML element */}
@@ -15,7 +16,7 @@ export default class IndexView {
             //m(NodeLinkDiagramComponent, {main: vnode.attrs.main})
             <div>
                 <TimebarComponent main={vnode.attrs.main}></TimebarComponent>
-                <HierarchicalEdgeComponent main={vnode.attrs.main}></HierarchicalEdgeComponent>
+                <NodeLinkDiagramComponent main={vnode.attrs.main}></NodeLinkDiagramComponent>
             </div>
         );
         // HTML syntax that is returned may only contain one root element

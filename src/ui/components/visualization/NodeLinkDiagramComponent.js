@@ -1,88 +1,162 @@
 import m from "mithril";
 import * as d3 from "d3";
 import Visualization from "@/visualize/Visualization";
-import { svg } from "d3";
 
 export default class NodeLinkDiagramComponent extends Visualization {
 
-    
 
     oninit(vnode) {
         super.oninit(vnode)
-        this.scale = 3;        
+        this.scale = 3;    
+        this.width = 500;
+        this.height = 500;    
+        this.allEmails = [];
+        this.filteredEmails = [];
+        this.currentEmails = [];
+        this.jobtitles = [];
+        this.nodes = [];
+        this.edges = [];
+        this.svg = undefined;
+        this.svgEdges = undefined;
+
+        
     }
 
-    oncreate(vnode) {
-
-        this.width = 275;
-        this.height = 275;        
+    oncreate(vnode) {       
 
         const persons = this.main.dataHandler.getPersons();        
-        
+        this.main.visualizer.addVisualization('NodeLinkDiagram', this);
 
-        let email1 = this.main.dataHandler.getEmailDateByPercentile(0.1);
-        let email2 = this.main.dataHandler.getEmailDateByPercentile(0.9);
-        // Gets emails from 10% to 30% of the time
-
-        const emails = this.main.dataHandler.getEmailsByDate(email1, email2);
-        // console.log(emails)
+        this.allEmails = this.main.dataHandler.getEmails('filtered');
+        // console.log(this.allEmails)
 
         this.jobtitles = this.main.dataHandler.getJobTitles();
         
 
-        let nodes = persons.map(function (person) {
+        this.nodes = persons.map(function (person) {
             return {
                 id: person.id,
                 jobtitle: person.jobtitle
             }
         });
 
-        console.log(nodes);
+        // console.log(this.nodes);
+        // console.log(this.edges);
 
-        let filteredEmails = emails.filter((item1,index,array)=>array.findIndex(item2=>(item1.fromId === item2.fromId && item1.toId === item2.toId))===index)
+        // this.filteredEmails = this.emails.filter((item1,index,array)=>array.findIndex(item2=>(item1.fromId === item2.fromId && item1.toId === item2.toId))===index)
+
+        // this.edges = this.allEmails.map(function (email) {
+        //     return {
+        //         source: email.fromId,
+        //         target: email.toId,
+        //         sentiment: email.sentiment,     
+        //         date: email.date
+        //     }
+        // })
 
 
+        this.allEmails = [...this.edges];
 
-        let edges = filteredEmails.map(function (email) {
-            return {
-                source: email.fromId,
-                target: email.toId,
-                sentiment: email.sentiment            }
-        })
+        // console.log(this.allEmails)
 
-
-        console.log(edges);
+        // console.log(this.edges);
 
         let node_link_diagram = d3.select('#node_link_diagram');
         this.svg = node_link_diagram.append('svg')
             .attr('width', this.width * this.scale)
-            .attr('height', this.height * this.scale)
-            .call(d3.zoom().extent([[0, 0], [this.width, this.height]])
-            .scaleExtent([1, 8]).on('zoom', ({transform}) => {
-                this.svg.attr('transform', transform)
-        }));
-            
-        this.svgEdges = d3.select('svg').append('g')
-            .selectAll('line').data(edges)
+            .attr('height', this.height * this.scale);          
+        
+        this.drawnEdges = this.svg.append('g').selectAll('line');
+        this.drawnNodes = this.svg.append('g').selectAll('circle');
             
 
-        let simulation = d3.forceSimulation(nodes)
-            // .force('charge', d3.forceManyBody())
-            // .force('center', d3.forceCenter((this.width * this.scale) / 2), (this.height * this.scale) / 2)
+        this.simulation = d3.forceSimulation()
             .force('link', d3.forceLink().id(function (d) {
                 return d.id
-            }).links(edges))
-            .on('tick', this.ticked(nodes, edges));
+            }))
+            // .force("charge", d3.forceManyBody())
+            // .force("center", d3.forceCenter(((this.width * this.scale) / 2), (this.height * this.scale) / 2 ))
+
+        // Set node data
+        this.drawnNodes = this.drawnNodes.data(this.nodes);
+        // Remove any old nodes that were previously drawn in the DOM
+        this.drawnNodes.exit().remove();
+        // Create new nodes if needed
+        this.drawnNodes = this.drawnNodes.enter().append('circle').merge(this.drawnNodes);
+
+        this.step();
     }
 
+    update(){
+
+        
+
+    }
+
+    step(){
+
+        console.log('step')
+
+        // emails of current timeframe
+        const emails = this.main.dataHandler.getEmails();
+
+        let shortData = [];
+
+        // for(let i = 0; i < 100; i++){
+        //     shortData.push(emails[i]);
+        // }
+
+        this.edges = emails.map(function (email) {
+            return {
+                source: email.fromId,
+                target: email.toId,
+                sentiment: email.sentiment,     
+                date: email.date
+            }
+        })
+
+       // this.allEmails also contains x and y display data
+
+        // this.edges = [];
+
+        // Go through all emails, compare to emails in current timeframe, and push the emails that exist in the current timeframe
+        // for(const email of emails){
+        //     // console.log(email)
+        //     let newEmail = this.allEmails.find(item => item.source.id === email.fromId 
+        //                         && item.target.id === email.toId 
+        //                         && this.main.dataHandler.datesAreEqual(item.date, email.date)
+        //                         )
+        //         // console.log(newEmail);
+        //     if(newEmail !=='undefined') this.edges.push(newEmail);           
+            
+        // }
+
+        // console.log(this.edges)
+
+        // Set edge data
+        this.drawnEdges = this.drawnEdges.data(this.edges);
+        // Remove any old edges drawn on the DOM
+        this.drawnEdges.exit().remove();
+        // Create new edges if needed
+        this.drawnEdges = this.drawnEdges.enter().append('line').merge(this.drawnEdges)
+
+        
+
+        // Set all nodes
+        this.simulation.nodes(this.nodes)
+        // Set edges
+        this.simulation.force('link').links(this.edges);
+        // this.simulation.force("center", d3.forceCenter(((this.width * this.scale) / 2), (this.height * this.scale) / 2 ));
+        this.simulation.on('tick', this.ticked());
+        // this.simulation.restart();
+              
+
+    }
     
 
-    updateEdges(edges) {
-        
-        this.svgEdges.enter()
-            .append('line')
-            .merge(this.svgEdges)
-            .attr('x1', (edge) => {
+    updateEdges() {            
+
+        this.drawnEdges.attr('x1', (edge) => {
                 return edge.source.x * this.scale
             })
             .attr('y1', (edge) => {
@@ -111,17 +185,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 return 0.5 // Math.abs(edge.sentiment) * 5
             })
             // .attr('stroke-opacity', 0.5)
-
-        this.svgEdges.exit().remove()
     }
 
-    updateNodes(nodes) {
-        let svgNodes = d3.select('svg').append('g').selectAll('circle').data(nodes)
+    updateNodes() {
 
-        svgNodes.enter()
-            .append('circle')
-            .attr('r', 5)
-            .merge(svgNodes)
+        this.drawnNodes.attr('r', 5)
             .attr('cx', (d) => {
                 return d.x * this.scale
             })
@@ -134,13 +202,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 scale.domain(this.jobtitles);
                 return scale(node.jobtitle);
             });
-
-        svgNodes.exit().remove()
     }
 
-    ticked(nodes, edges) {
-        this.updateEdges(edges)
-        this.updateNodes(nodes)
+    ticked() {
+        this.updateEdges()
+        this.updateNodes()
     }
 
 
