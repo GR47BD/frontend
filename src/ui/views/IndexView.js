@@ -1,5 +1,5 @@
 import m from "mithril";
-import TestComponent from "@/ui/components/TestComponent";
+import TestComponent from "@/ui/components/visualization/TestComponent.js";
 import NodeLinkDiagramComponent from "@/ui/components/visualization/NodeLinkDiagramComponent";
 import HierarchicalEdgeComponent from "@/ui/components/visualization/HierarchicalEdgeComponent";
 import TimebarComponent from "../components/TimebarComponent";

@@ -28,7 +28,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.main.visualizer.addVisualization('NodeLinkDiagram', this);
 
         this.allEmails = this.main.dataHandler.getEmails('filtered');
-        // console.log(this.allEmails)
 
         this.jobtitles = this.main.dataHandler.getJobTitles();
         
@@ -43,6 +42,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // console.log(this.nodes);
         // console.log(this.edges);
 
+        //Remove edges that go between the same nodes
         // this.filteredEmails = this.emails.filter((item1,index,array)=>array.findIndex(item2=>(item1.fromId === item2.fromId && item1.toId === item2.toId))===index)
 
         // this.edges = this.allEmails.map(function (email) {
@@ -73,16 +73,30 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.simulation = d3.forceSimulation()
             .force('link', d3.forceLink().id(function (d) {
                 return d.id
-            }))
-            // .force("charge", d3.forceManyBody())
+             })
+             
+             //Trying to group the nodes
+            //  .strength(function(link) {   
+            //     if (link.source.jobtitle == link.target.jobtitle) {
+            //         // console.log('same')
+            //       return 1; // stronger link for links within a group
+            //     }
+            //     else {
+            //       return 0.1; // weaker links for links across groups
+            //     }   
+            //     }) 
+            )
+                
+
+         
+
+            //Also does strange things to the data the second time
+            // .force('charge', d3.forceManyBody().strength(-20))
+
+            //When using center force the second time the data gets draw far away
             // .force("center", d3.forceCenter(((this.width * this.scale) / 2), (this.height * this.scale) / 2 ))
 
-        // Set node data
-        this.drawnNodes = this.drawnNodes.data(this.nodes);
-        // Remove any old nodes that were previously drawn in the DOM
-        this.drawnNodes.exit().remove();
-        // Create new nodes if needed
-        this.drawnNodes = this.drawnNodes.enter().append('circle').merge(this.drawnNodes);
+
 
         this.step();
     }
@@ -100,7 +114,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // emails of current timeframe
         const emails = this.main.dataHandler.getEmails();
 
-        let shortData = [];
+        // let shortData = [];
 
         // for(let i = 0; i < 100; i++){
         //     shortData.push(emails[i]);
@@ -112,26 +126,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 target: email.toId,
                 sentiment: email.sentiment,     
                 date: email.date
+                
             }
         })
 
-       // this.allEmails also contains x and y display data
-
-        // this.edges = [];
-
-        // Go through all emails, compare to emails in current timeframe, and push the emails that exist in the current timeframe
-        // for(const email of emails){
-        //     // console.log(email)
-        //     let newEmail = this.allEmails.find(item => item.source.id === email.fromId 
-        //                         && item.target.id === email.toId 
-        //                         && this.main.dataHandler.datesAreEqual(item.date, email.date)
-        //                         )
-        //         // console.log(newEmail);
-        //     if(newEmail !=='undefined') this.edges.push(newEmail);           
-            
-        // }
-
-        // console.log(this.edges)
+        console.log(this.edges)
 
         // Set edge data
         this.drawnEdges = this.drawnEdges.data(this.edges);
@@ -140,15 +139,22 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // Create new edges if needed
         this.drawnEdges = this.drawnEdges.enter().append('line').merge(this.drawnEdges)
 
-        
+        // Set node data
+        this.drawnNodes = this.drawnNodes.data(this.nodes);
+        // Remove any old nodes that were previously drawn in the DOM
+        this.drawnNodes.exit().remove();
+        // Create new nodes if needed
+        this.drawnNodes = this.drawnNodes.enter().append('circle').merge(this.drawnNodes);
+
 
         // Set all nodes
         this.simulation.nodes(this.nodes)
         // Set edges
         this.simulation.force('link').links(this.edges);
-        // this.simulation.force("center", d3.forceCenter(((this.width * this.scale) / 2), (this.height * this.scale) / 2 ));
+
+
         this.simulation.on('tick', this.ticked());
-        // this.simulation.restart();
+        this.simulation.restart();
               
 
     }
@@ -184,10 +190,61 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .attr('stroke-width', function (edge) {
                 return 0.5 // Math.abs(edge.sentiment) * 5
             })
-            // .attr('stroke-opacity', 0.5)
     }
 
+
     updateNodes() {
+
+                //Tryin to group the data
+        // let coords = {};
+        // let groups = []
+
+        // this.drawnNodes.each(node => {
+        //     if(groups.indexOf(node.jobtitle) == -1){
+        //         groups.push(node.jobtitle);
+        //         coords[node.jobtitle] = []
+        //     }
+        //     coords[node.jobtitle].push({x: node.x, y:node.y});
+        // })
+
+        // console.log(groups);
+        // console.log(coords)
+        // let centroids = {}
+
+        // for(let group in coords){
+        //     let groupNodes = coords[group];
+        //     let n = groupNodes.length;
+        //     let cx = 0;
+        //     let tx = 0;
+        //     let cy = 0;
+        //     let ty = 0;
+        //     groupNodes.forEach(node => {
+        //         tx += node.x;
+        //         ty += node.y;
+        //     });
+
+        //     cx = tx / n;
+        //     cy = ty / n;
+
+        //     centroids[group] = {x: cx, y: cy}
+        // }
+
+        // let minDistance = 10;
+        // this.drawnNodes.each(node => {
+        //     let cx = centroids[node.jobtitle].x;
+        //     let cy = centroids[node.jobtitle].y;
+        //     let x = node.x;
+        //     let y = node.y;
+        //     let dx = cx - x;
+        //     let dy = cy - y;
+
+        //     let r = Math.sqrt(dx*dx + dy*dy);
+
+        //     if(r > minDistance){
+        //         node.x = x * 0.9 + cx * 0,1;
+        //         node.y = y * 0.9 + cy * 0.1;
+        //     }
+        // })
 
         this.drawnNodes.attr('r', 5)
             .attr('cx', (d) => {
@@ -201,7 +258,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 const scale = d3.scaleOrdinal(d3.schemeCategory10);
                 scale.domain(this.jobtitles);
                 return scale(node.jobtitle);
-            });
+            })
+
     }
 
     ticked() {
