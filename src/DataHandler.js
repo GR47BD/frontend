@@ -135,8 +135,8 @@ export default class DataHandler {
         let newFirstIndex = 0;
         let newLastIndex = 0;
 
-        const firstDirection = this.lastIndex > 0 && this.timedData[0].date.getTime() <= this.timeSpan.startTime;
-        const lastDirection = this.lastIndex === 0 || this.timedData[this.timedData.length-1].date.getTime() <= this.timeSpan.endTime;
+        const firstDirection = this.filteredData[this.firstIndex].date.getTime() <= this.timeSpan.startTime;
+        const lastDirection = this.filteredData[this.lastIndex].date.getTime() <= this.timeSpan.endTime;
 
         if(firstDirection) {
             for(let i = this.firstIndex; i < this.lastIndex; i++) {
