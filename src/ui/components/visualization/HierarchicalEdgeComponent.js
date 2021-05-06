@@ -12,98 +12,8 @@ export default class HierarchicalEdgeComponent extends Visualization {
 
     oncreate(vnode){
 
-        //this.createDonutGraph(vnode);
         this.createHierarchicalEdgeGraph(vnode);
         
-    }
-
-    createDonutGraph(vnode) {
-
-      const jobs = this.main.dataHandler.getJobTitles();
-      const persons = this.main.dataHandler.getPersons();
-
-      // Turning the jobs into appropriate objects
-      var mapping = jobs.map(item => {
-        return {
-          "key": item,
-          "value": 0
-        }});
-      // Counting number of people with each job title
-      for (var person in persons){
-        for (var job in jobs){
-            if (persons[person].jobtitle == mapping[job].key){
-              mapping[job].value++;
-            }
-        }
-      }  
-
-      // Set dimensions
-      this.width = 600
-      this.height = 600
-      this.margin = 40
-
-      // Set radius
-      var radius = Math.min(this.width, this.height) / 2 - this.margin;
-
-      // Append the svg to 'hiararchical_div'
-      var svg = d3.select("#hierarchical_div")
-        .append("svg")
-          .attr("width", this.width)
-          .attr("height", this.height)
-        .append("g")
-          .attr("transform", "translate(" + this.width / 2 + "," + this.height / 2 + ")");
-
-      const data = mapping;
-      // Set color scale
-      var color = d3.scaleOrdinal()
-        .domain(Object.keys(data))
-        .range(d3.schemeBlues[8]);
-      
-      // Compute position of each group on the pie
-      var pie = d3.pie()
-        .sort(null) // Do not sort by size
-        .value(function(d) {return d.value; });
-      var data_ready = pie(data);  // Fixed for now...
-      
-      // The arc generator
-      var arc = d3.arc()
-        .innerRadius(radius * 0.6)         // This is the size of the donut hole
-        .outerRadius(radius * 0.8)
-        .cornerRadius(5);
-      
-      // Another arc that won't be drawn. Just for labels positioning
-      var outerArc = d3.arc()
-        .innerRadius(radius * 0.9)
-        .outerRadius(radius * 0.9);
-      
-      // Build the pie chart: Basically, each part of the pie is a path that we build using the arc function.
-      svg
-        .selectAll('allSlices')
-        .data(data_ready)
-        .enter()
-        .append('path')
-        .attr('d', arc)
-        .attr('fill', function(d){ return(color(d.data.key)) })
-        .attr("stroke", "white")
-        .style("stroke-width", "5px") // Padding between slices
-        .style("opacity", 0.9);
-      
-      // Add and position the names in the bars  
-      svg
-        .selectAll('allLabels')
-        .data(data_ready)
-        .enter()
-        .append('text')
-          .text( function(d) { console.log(d.data.key) ; return d.data.key } )
-          .attr('transform', function(d) {
-               return 'translate(' + arc.centroid(d).join(",") + ')';
-          })
-          .style('text-anchor', function(d) {
-              var midangle = d.startAngle + (d.endAngle - d.startAngle) / 2
-              return (midangle < Math.PI ? 'start' : 'end')
-          })
-          .style('font-family', 'Helvetica')
-          .style('font-weight', 'bold');
     }
 
     // A lot to improve on, but it works for now
@@ -117,7 +27,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
           .size([360, innerRadius]);
 
       var line = d3.lineRadial()
-          .curve(d3.curveBundle.beta(0.85))
+          .curve(d3.curveBundle.beta(0.85))   // line tension
           .radius(function(d) { return d.y; })
           .angle(function(d) { return d.x / 180 * 3.1415; });
 
@@ -136,24 +46,26 @@ export default class HierarchicalEdgeComponent extends Visualization {
 
       // Creating the structure of the hierarchy needed
       var mapping = new Map();
+      var holder = this.main.dataHandler;
 
       for(const person of persons) {
         mapping.set(person.id, {
-            "name": "job." + person.jobtitle + "." + person.id,
+            "name": "job." + person.jobtitle + "." + holder.emailToName(person.email),
             "size": 1,
             "imports": []
         });
       }
 
       let email1 = this.main.dataHandler.getEmailDateByPercentile(0.1);
-      let email2 = this.main.dataHandler.getEmailDateByPercentile(0.105);
-      // Get emails from 10% to 10.5% of the time
+      let email2 = this.main.dataHandler.getEmailDateByPercentile(0.15);
+      // Get emails from 10% to 15% of the time
       const emails = this.main.dataHandler.getEmailsByDate(email1, email2);
+
       // Mapping emails to a more appropriate object
       let emails_sent = emails.map(item => {
         return {
           "source": item.fromId,
-          "target_details": "job." + item.toJobtitle + "." + item.toId
+          "target_details": "job." + item.toJobtitle + "." + holder.emailToName(item.toEmail)
         }
       });
 
@@ -195,8 +107,9 @@ export default class HierarchicalEdgeComponent extends Visualization {
           .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
           .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
           .text(function(d) { return d.data.key; })
-          .style('font', 8 + " px")
-          .style('font-family', 'Helvetica');
+          .style("font-size", diameter/65 + "px")
+          .style("font-family", "Helvetica");
+          //.attr("class", "hier-node");
 
       // Create the hierarchy from node names
       function packageHierarchy(classes) {

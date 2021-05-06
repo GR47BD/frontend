@@ -370,4 +370,19 @@ export default class DataHandler {
         date1.getMonth() === date2.getMonth() &&
         date1.getFullYear() === date2.getFullYear();
     }
+
+    /**
+     * @param {} email
+     * 
+     * @returns name extracted from the email
+     */
+    emailToName(email_string){
+         let res = email_string.split("@")[0].split('.');
+         res = res.map(function(word, i){
+             if (word != ""){
+                 return word[0].toUpperCase() + word.slice(1);
+             }
+         });
+         return res.join(' ');
+    }
 }
