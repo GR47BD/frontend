@@ -19,6 +19,11 @@
 }
 
 .hier-node {
-	font-size: 12px;
 	font-family: 'Helvetica';
+	fill: #505050;
+}
+
+.hier-node:hover {
+	fill :black;
+	font-weight: bolder;
 }

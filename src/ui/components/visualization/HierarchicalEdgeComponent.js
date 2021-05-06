@@ -19,9 +19,9 @@ export default class HierarchicalEdgeComponent extends Visualization {
     // A lot to improve on, but it works for now
     createHierarchicalEdgeGraph(vnode){
       console.time('total');
-      var diameter = 820,
-      radius = diameter / 2,
-      innerRadius = radius - 120;
+      const diameter = 820,
+          radius = diameter / 2,
+          innerRadius = radius - 120;
   
       var cluster = d3.cluster()
           .size([360, innerRadius]);
@@ -40,7 +40,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
           .attr("transform", "translate(" + radius + "," + radius + ")");
 
       var link = svg.append("g").selectAll("link"),
-         node = svg.append("g").selectAll("node");
+          node = svg.append("g").selectAll("node");
 
       const persons = this.main.dataHandler.getPersons();
 
@@ -69,15 +69,6 @@ export default class HierarchicalEdgeComponent extends Visualization {
         }
       });
 
-      // Create appropriate data type, so that we can create a heirarchy out of it
-      // Push all emails sent by a person into the list of imports(emails sent) for this person
-      /*for (var person in mapping){
-        for (var email in emails_sent){
-          if (mapping[person].name.substring(mapping[person].name.lastIndexOf('.')+1) == emails_sent[email].source){
-            mapping[person].imports.push(emails_sent[email].target_details);
-          }
-        }
-      }*/
       for(var email of emails_sent) {
           const person = mapping.get(email.source);
           if(person === undefined) break;
@@ -87,13 +78,13 @@ export default class HierarchicalEdgeComponent extends Visualization {
       var classes = Array.from(mapping.values());
       
       // Create the graph
-      var root = packageHierarchy(classes)
+      var root = this.packageHierarchy(classes)
           .sum(function(d) { return d.size; });
       cluster(root);
 
       // Create the links
       link = link
-        .data(packageImports(root.leaves()))
+        .data(this.packageImports(root.leaves()))
         .enter().append("path")
           .each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
           .attr("d", line)
@@ -108,53 +99,56 @@ export default class HierarchicalEdgeComponent extends Visualization {
           .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
           .text(function(d) { return d.data.key; })
           .style("font-size", diameter/65 + "px")
-          .style("font-family", "Helvetica");
-          //.attr("class", "hier-node");
+          .attr("class", "hier-node");
 
-      // Create the hierarchy from node names
-      function packageHierarchy(classes) {
-        var map = {};
+    }
+
+    updateEdges(){
       
-        function find(name, data) {
-          var node = map[name], i;
-          if (!node) {
-            node = map[name] = data || {name: name, children: []};
-            if (name.length) {
-              node.parent = find(name.substring(0, i = name.lastIndexOf(".")));
-              node.parent.children.push(node);
-              node.key = name.substring(i + 1);
-            }
+    }
+
+    // Create the hierarchy from node names
+    packageHierarchy(classes) {
+      var map = {};
+    
+      function find(name, data) {
+        var node = map[name], i;
+        if (!node) {
+          node = map[name] = data || {name: name, children: []};
+          if (name.length) {
+            node.parent = find(name.substring(0, i = name.lastIndexOf(".")));
+            node.parent.children.push(node);
+            node.key = name.substring(i + 1);
           }
-          return node;
         }
-      
-        classes.forEach(function(d) {
-          find(d.name, d);
-        });
-      
-        return d3.hierarchy(map[""]);
+        return node;
       }
+    
+      classes.forEach(function(d) {
+        find(d.name, d);
+      });
+    
+      return d3.hierarchy(map[""]);
+    }
 
-      // Return a list of imports for the given array of nodes.
-      function packageImports(nodes) {
-        var map = {},
-            imports = [];
-      
-        // Compute a map from name to node.
-        nodes.forEach(function(d) {
-          map[d.data.name] = d;
+    // Return a list of imports for the given array of nodes.
+    packageImports(nodes) {
+      var map = {},
+          imports = [];
+    
+      // Compute a map from name to node.
+      nodes.forEach(function(d) {
+        map[d.data.name] = d;
+      });
+    
+      // For each import, construct a link from the source to target node.
+      nodes.forEach(function(d) {
+        if (d.data.imports) d.data.imports.forEach(function(i) {
+          imports.push(map[d.data.name].path(map[i]));
         });
-      
-        // For each import, construct a link from the source to target node.
-        nodes.forEach(function(d) {
-          if (d.data.imports) d.data.imports.forEach(function(i) {
-            imports.push(map[d.data.name].path(map[i]));
-          });
-        });
-      
-        return imports;
-      }
-
+      });
+    
+      return imports;
     }
 
 
