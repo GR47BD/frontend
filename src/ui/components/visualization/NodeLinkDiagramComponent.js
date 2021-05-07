@@ -2,6 +2,7 @@ import m from "mithril";
 import * as d3 from "d3";
 import Visualization from "@/visualize/Visualization";
 
+
 export default class NodeLinkDiagramComponent extends Visualization {
 
 
@@ -23,8 +24,10 @@ export default class NodeLinkDiagramComponent extends Visualization {
     }
 
     oncreate(vnode) {       
+        seedrandom('abcd');
 
-        const persons = this.main.dataHandler.getPersons('filtered');        
+        const persons = this.main.dataHandler.getPersons('filtered');       
+        
         this.main.visualizer.addVisualization('NodeLinkDiagram', this);
 
         this.allEmails = this.main.dataHandler.getEmails('filtered');
@@ -36,9 +39,17 @@ export default class NodeLinkDiagramComponent extends Visualization {
             return {
                 id: person.id,
                 jobtitle: person.jobtitle,
-                name: this.main.dataHandler.emailToName(person.email)
+                name: this.main.dataHandler.emailToName(person.email),
+                highlighted: false
             }
         });
+
+
+        // Create a map that maps from node id to index in the nodes array
+        this.personsIndex = new Map();
+        for(let i = 0; i < this.nodes.length; i++){
+            this.personsIndex.set(this.nodes[i].id, i);
+        }
 
         // console.log(this.nodes);
         // console.log(this.edges);
@@ -75,21 +86,25 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .force('link', d3.forceLink().id(function (d) {
                 return d.id
             }))
-            //.force('charge', d3.forceManyBody().strength(-20))
+            .force('charge', d3.forceManyBody().strength(-20))
             .force("center", d3.forceCenter(((this.width * this.scale) / 4), (this.height * this.scale) / 4).strength(0.8))
             .force('collide', d3.forceCollide(d => 10).strength(0.7).iterations(10))
             .tick(1)
 
-        this.step();
-        this.ticked(true);
-    }
+            this.step();
 
-    step(){
+            this.ticked(true);
+            
+    }
+    
+
+    step() {
+        console.log('step')
         this.update();
     }
 
     update(){
-      console.time('update-node');
+
         this.drawnEdges = this.svg.select('.edge').selectAll('line');
         this.drawnNodes = this.svg.select('.node').selectAll('circle');
 
@@ -151,12 +166,13 @@ export default class NodeLinkDiagramComponent extends Visualization {
         const centerStrength = 1 - (this.edges.length / 3000) * 0.3;
         // Set all nodes
         this.simulation.nodes(this.nodes)
+
         this.simulation.force('link').links(this.edges);
         this.simulation.force('link').strength(link => (link.nr/this.maxNr)*.3 + linkStrength);
         console.log(`link (basis): ${linkStrength.toFixed(2)}, center: ${centerStrength.toFixed(2)}`);
         this.simulation.force('center').strength(centerStrength);
         // Set edges
-        this.simulation.alpha(1).restart();
+        this.simulation.restart();
         this.simulation.on('tick', this.ticked());
         console.timeEnd('update-node');
     }
@@ -264,14 +280,39 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 return d.y * this.scale
             })
             .attr('fill', (node) => {
+                if(node.highlighted) return '#000000';
                 const scale = d3.scaleOrdinal(d3.schemeCategory10);
                 scale.domain(this.jobtitles);
                 return scale(node.jobtitle);
             })
-            .on("mouseover", (d, i) => console.log(i.name))
+            
+            .on("mouseover", (d, i) => {
+                this.main.visualizer.selectNode(i.id);
+                // console.log(i.name)
+                // console.log(i)
+            })
+            .on('mouseout', (d, i) => {
+                this.main.visualizer.deselectNode(i.id);
+            })
 
         if(firstRun) this.drawnNodes.attr('transform', `translate(${(this.width * this.scale) / 2},${(this.height * this.scale) / 2})`)
         else this.drawnNodes.attr('transform', `translate(0,0)`)
+    }
+
+    selectNode(id){
+        //Get the location of the selected person in the nodes array
+        let nodeIndex = this.personsIndex.get(id);
+        //Set highlighted to true
+        this.nodes[nodeIndex].highlighted = true;
+        super.selectNode();
+    }
+
+    deselectNode(id){
+        //Get the location of the selected person in the nodes array
+        let nodeIndex = this.personsIndex.get(id);
+        //Set highlighted to false
+        this.nodes[nodeIndex].highlighted = false;
+        super.deselectNode();
     }
 
     ticked(firstRun = false) {
