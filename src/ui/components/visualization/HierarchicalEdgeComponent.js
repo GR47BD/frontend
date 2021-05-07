@@ -5,257 +5,197 @@ import Visualization from "@/visualize/Visualization";
 // TODO: ADD scale
 
 export default class HierarchicalEdgeComponent extends Visualization {
-
     oninit(vnode){
         super.oninit(vnode);
+
+		this.options = {
+			diameter: 820,
+			nameWidth: 120
+		}
+
+		this.lineOptions = {
+			tension: 0.85,
+			basis: 0.15,
+			amountBonus: 0.7
+		}
     }
 
     oncreate(vnode){
         this.createHierarchicalEdgeGraph(vnode);
     }
 
-    update() {
-      console.time('update-hier');
-      const persons = this.main.dataHandler.getPersons();
-
-      var mapping = new Map();
-      var holder = this.main.dataHandler;
-
-      for(const person of persons) {
-        mapping.set(person.id, {
-            "name": "job." + person.jobtitle + "." + holder.emailToName(person.email),
-            "size": 1,
-            "imports": []
-        });
-      }
-
-       // Get emails from 10% to 15% of the time
-       this.emails = this.main.dataHandler.getEmails();
-
-      const mailMap = new Map();
-        this.maxNr = 0;
-
-        for(const email of this.emails) {
-            const key = email.fromId + "." + email.toId;
-            const mapValue = mailMap.get(key)
-
-            if(mapValue === undefined) {
-                email.nr = 1;
-                mailMap.set(key, email);
-                this.maxNr = 1;
-            }
-            else {
-                mapValue.nr += 1;
-                this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;
-            }
-        }
-
-        this.emails = Array.from(mailMap.values());
-
-       // Mapping emails to a more appropriate object
-       let emails_sent = this.emails.map(item => {
-         return {
-           "source": item.fromId,
-           "target_details": "job." + item.toJobtitle + "." + holder.emailToName(item.toEmail)
-         }
-       });
- 
-       for(var email of emails_sent) {
-           const person = mapping.get(email.source);
-           if(person === undefined) break;
-           person.imports.push(email.target_details);
-       }
-
-       var classes = Array.from(mapping.values());
-      
-      // Create the graph
-      var root = this.packageHierarchy(classes)
-          .sum(function(d) { return d.size; });
-      this.cluster(root);
-
-      // Create the links
-      this.svg.selectAll("path").remove();
-      this.svg.selectAll("path").data(this.packageImports(root.leaves()))
-        .enter().append("path")
-          .each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
-          .attr("d", this.line)
-          .attr("class", "hier-stroke")
-          .attr("opacity", (link, value) => 0.15 + .7 * (this.emails[value].nr/this.maxNr));
-      console.timeEnd('update-hier');
-    }
-
-    step() {
-      this.update();
-    }
-
     // A lot to improve on, but it works for now
     createHierarchicalEdgeGraph(vnode){     
-      this.jobtitles = this.main.dataHandler.getJobTitles();
-      this.main.visualizer.addVisualization('HierarchicalEdgeComponent', this);
-      console.time('total');
-      const diameter = 820,
-          radius = diameter / 2,
-          innerRadius = radius - 120;
-  
-      this.cluster = d3.cluster()
-          .size([360, innerRadius]);
+		this.main.visualizer.addVisualization('HierarchicalEdgeComponent', this);
 
-      this.line = d3.lineRadial()
-          .curve(d3.curveBundle.beta(0.85))   // line tension
-          .radius(function(d) { return d.y; })
-          .angle(function(d) { return d.x / 180 * Math.PI; });
+		this.jobtitles = this.main.dataHandler.getJobTitles();
+		const radius = this.options.diameter / 2;
+		const innerRadius = radius - this.options.nameWidth;
+		
+    	this.cluster = d3.cluster()
+        	.size([360, innerRadius]);
 
-      this.svg = d3.select("#hierarchical_div").append("svg")
-          .attr("width", diameter)
-          .attr("height", diameter)
-          .attr("shape-rendering", "optimizeSpeed") // "optimizeSpeed" shaves off about 100ms per render, but looks worse than "geometricPrecision"
-          .attr("image-rendering", "optimizeSpeed")
-        .append("g")
-          .attr("transform", "translate(" + radius + "," + radius + ")");
+		this.line = d3.lineRadial()
+			.curve(d3.curveBundle.beta(this.lineOptions.tension))   // line tension
+			.radius(d => d.y)
+			.angle(d => d.x / 180 * Math.PI);
 
-      this.link = this.svg.append("g").selectAll("link"),
-      this.node = this.svg.append("g").selectAll("node");
+		this.svg = d3.select("#hierarchical_div").append("svg")
+			.attr("width", this.options.diameter)
+			.attr("height", this.options.diameter)
+			.attr("shape-rendering", "optimizeSpeed")
+			.attr("image-rendering", "optimizeSpeed")
+			.append("g")
+			.attr("transform", "translate(" + radius + "," + radius + ")");
 
-      const persons = this.main.dataHandler.getPersons();
+		this.link = this.svg.append("g").selectAll("link"),
+		this.node = this.svg.append("g").selectAll("node");
 
-      // Creating the structure of the hierarchy needed
-      var mapping = new Map();
-      var holder = this.main.dataHandler;
+		const root = this.update();
 
-      for(const person of persons) {
-        mapping.set(person.id, {
-            "name": "job." + person.jobtitle + "." + holder.emailToName(person.email),
-            "size": 1,
-            "imports": []
-        });
-      }
+	// Create the nodes     
+	this.node = this.node
+		.data(root.leaves())
+		.enter().append("text")
+		.attr("dy", "0.31em")
+		.attr("transform", d => `rotate(${d.x - 90})translate(${d.y + 8},0)${d.x < 180 ? "" : "rotate(180)"}`)
+		.attr("text-anchor", d => d.x < 180 ? "start" : "end")
+		.text(d => d.data.key)
+		.style("font-size", this.options.diameter/65 + "px")
+		.attr("class", "hier-node")
+		.attr('fill', node => {
+			const scale = d3.scaleOrdinal(d3.schemeCategory10);
+			scale.domain(this.jobtitles);
+			return scale(node.data.parent.key);
+		});
 
-      // Get emails from 10% to 15% of the time
-      this.emails = this.main.dataHandler.getEmails();
+	}
 
-      const mailMap = new Map();
-        this.maxNr = 0;
+	update() {
+		const persons = this.main.dataHandler.getPersons('all');
+		const mapping = new Map();
+		const holder = this.main.dataHandler;
 
-        for(const email of this.emails) {
-            const key = email.fromId + "." + email.toId;
-            const mapValue = mailMap.get(key)
+		for(const person of persons) {
+			mapping.set(person.id, {
+				"name": "job." + person.jobtitle + "." + holder.emailToName(person.email),
+				"size": 1,
+				"imports": []
+			});
+		}
 
-            if(mapValue === undefined) {
-                email.nr = 1;
-                mailMap.set(key, email);
-                this.maxNr = 1;
-            }
-            else {
-                mapValue.nr += 1;
-                this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;
-            }
-        }
+		// Get emails from 10% to 15% of the time
+		this.emails = this.main.dataHandler.getEmails();
 
-        this.emails = Array.from(mailMap.values());
+		const mailMap = new Map();
+		this.maxNr = 0;
 
-      // Mapping emails to a more appropriate object
-      let emails_sent = this.emails.map(item => {
-        return {
-          "source": item.fromId,
-          "target_details": "job." + item.toJobtitle + "." + holder.emailToName(item.toEmail),
-          "nr": item.nr
-        }
-      });
+		for(const email of this.emails) {
+			const key = email.fromId + "." + email.toId;
+			const mapValue = mailMap.get(key)
 
-      for(var email of emails_sent) {
-          const person = mapping.get(email.source);
-          if(person === undefined) break;
-          person.imports.push(email.target_details);
-      }
-      
-      var classes = Array.from(mapping.values());
-      
-      // Create the graph
-      var root = this.packageHierarchy(classes)
-          .sum(function(d) { return d.size; });
-      this.cluster(root);
+			if(mapValue === undefined) {
+				email.nr = 1;
+				mailMap.set(key, email);
+				this.maxNr = 1;
+			}
+			else {
+				mapValue.nr += 1;
+				this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;
+			}
+		}
 
-      // Create the links
-      this.link = this.link
-        .data(this.packageImports(root.leaves()))
-        .enter().append("path")
-          .each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
-          .attr("d", this.line)
-          .attr("class", "hier-stroke")
-          .attr("opacity", (link, value) => 0.15 + .7 * (this.emails[value].nr/this.maxNr));
-      
-      // Create the nodes     
-      this.node = this.node
-        .data(root.leaves())
-        .enter().append("text")
-          .attr("dy", "0.31em")
-          .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
-          .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
-          .text(function(d) { return d.data.key; })
-          .style("font-size", diameter/65 + "px")
-          .attr("class", "hier-node")
-          .attr('fill', (node) => {
-            const scale = d3.scaleOrdinal(d3.schemeCategory10);
-            scale.domain(this.jobtitles);
-            console.log(node.data.parent.key);
-            return scale(node.data.parent.key);
-          });
+		this.emails = Array.from(mailMap.values());
 
-    }
+		// Mapping emails to a more appropriate object
+		let emails_sent = this.emails.map(item => {
+			return {
+				"source": item.fromId,
+				"target_details": "job." + item.toJobtitle + "." + holder.emailToName(item.toEmail)
+			}
+		});
 
-    updateEdges(){
-      
-    }
+		for(var email of emails_sent) {
+			const person = mapping.get(email.source);
+			if(person === undefined) break;
+			person.imports.push(email.target_details);
+		}
 
-    // Create the hierarchy from node names
-    packageHierarchy(classes) {
-      var map = {};
-    
-      function find(name, data) {
-        var node = map[name], i;
-        if (!node) {
-          node = map[name] = data || {name: name, children: []};
-          if (name.length) {
-            node.parent = find(name.substring(0, i = name.lastIndexOf(".")));
-            node.parent.children.push(node);
-            node.key = name.substring(i + 1);
-          }
-        }
-        return node;
-      }
-    
-      classes.forEach(function(d) {
-        find(d.name, d);
-      });
-    
-      return d3.hierarchy(map[""]);
-    }
+		const classes = Array.from(mapping.values());
 
-    // Return a list of imports for the given array of nodes.
-    packageImports(nodes) {
-      var map = {},
-          imports = [];
-    
-      // Compute a map from name to node.
-      nodes.forEach(function(d) {
-        map[d.data.name] = d;
-      });
-    
-      // For each import, construct a link from the source to target node.
-      nodes.forEach(function(d) {
-        if (d.data.imports) d.data.imports.forEach(function(i) {
-          imports.push(map[d.data.name].path(map[i]));
-        });
-      });
-    
-      return imports;
-    }
+		// Create the graph
+		const root = this.packageHierarchy(classes)
+			.sum(d => d.size);
+		this.cluster(root);
 
+		// Create the links
+		this.svg.selectAll("path").remove();
+		this.svg.selectAll("path").data(this.packageImports(root.leaves()))
+			.enter().append("path")
+			.each(d => {
+				d.source = d[0], 
+				d.target = d[d.length - 1]
+			})
+			.attr("d", this.line)
+			.attr("class", "hier-stroke")
+			.attr("opacity", (link, value) => this.lineOptions.basis + this.lineOptions.amountBonus * (this.emails[value].nr/this.maxNr));
 
-    view(){
-        return (
-            <div id="hierarchical_div"></div>
-        );
-    }
+		return root;
+	}
 
+	step() {
+		this.update();
+	}
+
+	// Create the hierarchy from node names
+	packageHierarchy(classes) {
+		let map = {};
+
+		classes.forEach(d => {
+			this.find(d.name, d, map);
+		});
+
+		return d3.hierarchy(map[""]);
+	}
+
+	find(name, data, map) {
+		let node = map[name];
+		let i;
+
+		if (!node) {
+			node = map[name] = data || {name: name, children: []};
+
+			if (name.length) {
+				node.parent = this.find(name.substring(0, i = name.lastIndexOf(".")), undefined, map);
+				node.parent.children.push(node);
+				node.key = name.substring(i + 1);
+			}
+		}
+		
+		return node;
+	}
+
+	// Return a list of imports for the given array of nodes.
+	packageImports(nodes) {
+		let map = {};
+		let imports = [];
+
+		// Compute a map from name to node.
+		nodes.forEach(d => map[d.data.name] = d);
+
+		// For each import, construct a link from the source to target node.
+		nodes.forEach(d => {
+			if (!d.data.imports) return;
+			
+			d.data.imports.forEach(i => imports.push(map[d.data.name].path(map[i])));
+		});
+
+		return imports;
+	}
+
+	view(){
+		return (
+			<div id="hierarchical_div"></div>
+		);
+	}
 }
