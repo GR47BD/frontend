@@ -7,7 +7,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     oninit(vnode) {
         super.oninit(vnode)
-        this.scale = 3;    
+        this.scale = 2;    
         this.width = 500;
         this.height = 500;    
         this.allEmails = [];
@@ -24,7 +24,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     oncreate(vnode) {       
 
-        const persons = this.main.dataHandler.getPersons();        
+        const persons = this.main.dataHandler.getPersons('filtered');        
         this.main.visualizer.addVisualization('NodeLinkDiagram', this);
 
         this.allEmails = this.main.dataHandler.getEmails('filtered');
@@ -32,10 +32,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.jobtitles = this.main.dataHandler.getJobTitles();
         
 
-        this.nodes = persons.map(function (person) {
+        this.nodes = persons.map( (person) => {
             return {
                 id: person.id,
-                jobtitle: person.jobtitle
+                jobtitle: person.jobtitle,
+                name: this.main.dataHandler.emailToName(person.email)
             }
         });
 
@@ -66,53 +67,35 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .attr('width', this.width * this.scale)
             .attr('height', this.height * this.scale);          
         
-        this.drawnEdges = this.svg.append('g').selectAll('line');
-        this.drawnNodes = this.svg.append('g').selectAll('circle');
+        this.drawnEdges = this.svg.append('g').attr("class", "edge").selectAll('line');
+        this.drawnNodes = this.svg.append('g').attr("class", "node").selectAll('circle');
             
 
         this.simulation = d3.forceSimulation()
             .force('link', d3.forceLink().id(function (d) {
                 return d.id
-             })
-             
-             //Trying to group the nodes
-            //  .strength(function(link) {   
-            //     if (link.source.jobtitle == link.target.jobtitle) {
-            //         // console.log('same')
-            //       return 1; // stronger link for links within a group
-            //     }
-            //     else {
-            //       return 0.1; // weaker links for links across groups
-            //     }   
-            //     }) 
-            )
-                
-
-         
-
-            //Also does strange things to the data the second time
-            // .force('charge', d3.forceManyBody().strength(-20))
-
-            //When using center force the second time the data gets draw far away
-            // .force("center", d3.forceCenter(((this.width * this.scale) / 2), (this.height * this.scale) / 2 ))
-
-
+            }))
+            //.force('charge', d3.forceManyBody().strength(-20))
+            .force("center", d3.forceCenter(((this.width * this.scale) / 4), (this.height * this.scale) / 4).strength(0.8))
+            .force('collide', d3.forceCollide(d => 10).strength(0.7).iterations(10))
+            .tick(1)
 
         this.step();
-    }
-
-    update(){
-
-        
-
+        this.ticked(true);
     }
 
     step(){
+        this.update();
+    }
 
-        console.log('step')
+    update(){
+      console.time('update-node');
+        this.drawnEdges = this.svg.select('.edge').selectAll('line');
+        this.drawnNodes = this.svg.select('.node').selectAll('circle');
+
 
         // emails of current timeframe
-        const emails = this.main.dataHandler.getEmails();
+        let emails = this.main.dataHandler.getEmails();
 
         // let shortData = [];
 
@@ -120,63 +103,87 @@ export default class NodeLinkDiagramComponent extends Visualization {
         //     shortData.push(emails[i]);
         // }
 
-        this.edges = emails.map(function (email) {
+        emails = emails.map(email => {
             return {
                 source: email.fromId,
                 target: email.toId,
                 sentiment: email.sentiment,     
-                date: email.date
-                
+                date: email.date,
+                nr: 1
             }
-        })
+        });
 
-        console.log(this.edges)
+        const mailMap = new Map();
+        this.maxNr = 0;
+
+        for(const email of emails) {
+            const key = email.source + "." + email.target;
+            const mapValue = mailMap.get(key)
+
+            if(mapValue === undefined) {
+                mailMap.set(key, email);
+                this.maxNr = 1;
+            }
+            else {
+                mapValue.nr += 1;
+                this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;
+            }
+        }
+
+        this.edges = Array.from(mailMap.values());
 
         // Set edge data
-        this.drawnEdges = this.drawnEdges.data(this.edges);
         // Remove any old edges drawn on the DOM
-        this.drawnEdges.exit().remove();
+        //this.svg.append('g').selectAll('line')
+        this.drawnEdges.data(this.edges).exit().remove();
         // Create new edges if needed
-        this.drawnEdges = this.drawnEdges.enter().append('line').merge(this.drawnEdges)
+        this.drawnEdges.data(this.edges).enter().append('line');
 
         // Set node data
-        this.drawnNodes = this.drawnNodes.data(this.nodes);
         // Remove any old nodes that were previously drawn in the DOM
-        this.drawnNodes.exit().remove();
+        this.drawnNodes.data(this.nodes).exit().remove();
         // Create new nodes if needed
-        this.drawnNodes = this.drawnNodes.enter().append('circle').merge(this.drawnNodes);
+        this.drawnNodes.data(this.nodes).enter().append('circle');
+        
+        //this.simulation.restart();
 
-
+        const linkStrength = 0.9 - (this.edges.length / 3000) * 0.7;
+        const centerStrength = 1 - (this.edges.length / 3000) * 0.3;
         // Set all nodes
         this.simulation.nodes(this.nodes)
-        // Set edges
         this.simulation.force('link').links(this.edges);
-
-
+        this.simulation.force('link').strength(link => (link.nr/this.maxNr)*.3 + linkStrength);
+        console.log(`link (basis): ${linkStrength.toFixed(2)}, center: ${centerStrength.toFixed(2)}`);
+        this.simulation.force('center').strength(centerStrength);
+        // Set edges
+        this.simulation.alpha(1).restart();
         this.simulation.on('tick', this.ticked());
-        this.simulation.restart();
-              
-
+        console.timeEnd('update-node');
     }
     
 
-    updateEdges() {            
+    updateEdges(firstRun) {
+        this.drawnEdges = this.svg.select('.edge').selectAll('line');
 
         this.drawnEdges.attr('x1', (edge) => {
-                return edge.source.x * this.scale
+                //return this.nodes[edge.source-1].x * this.scale
+                return edge.source.x * this.scale;
             })
             .attr('y1', (edge) => {
-                return edge.source.y * this.scale
+                //return this.nodes[edge.source-1].y * this.scale
+                return edge.source.y * this.scale;
             })
             .attr('x2', (edge) => {
+                //return this.nodes[edge.target-1].x * this.scale
                 return edge.target.x * this.scale
             })
             .attr('y2', (edge) => {
+                //return this.nodes[edge.target-1].y * this.scale
                 return edge.target.y * this.scale
             })
-            .attr('transform', `translate(${(this.width * this.scale) / 2},${(this.height * this.scale) / 2})`)
-            .attr('stroke', function (edge) {
-                return '#c0c0c0'
+            .attr('stroke', edge => {
+                const alpha = (0.4 * edge.nr / this.maxNr + 0.2).toFixed(2);
+                return `rgba(0,0,0,${alpha})`
                 // if(edge.sentiment < 0){
                 //     return'rgb(255,0,0)'
                 // } 
@@ -190,10 +197,13 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .attr('stroke-width', function (edge) {
                 return 0.5 // Math.abs(edge.sentiment) * 5
             })
+
+        if(firstRun) this.drawnEdges.attr('transform', `translate(${(this.width * this.scale) / 2},${(this.height * this.scale) / 2})`)
+        else this.drawnEdges.attr('transform', `translate(0,0)`)
     }
 
 
-    updateNodes() {
+    updateNodes(firstRun) {
 
                 //Tryin to group the data
         // let coords = {};
@@ -244,8 +254,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
         //         node.x = x * 0.9 + cx * 0,1;
         //         node.y = y * 0.9 + cy * 0.1;
         //     }
-        // })
-
+        // }) 
+        this.drawnNodes = this.svg.select('.node').selectAll('circle');
         this.drawnNodes.attr('r', 5)
             .attr('cx', (d) => {
                 return d.x * this.scale
@@ -253,18 +263,20 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .attr('cy', (d) => {
                 return d.y * this.scale
             })
-            .attr('transform', `translate(${(this.width * this.scale) / 2},${(this.height * this.scale) / 2})`)
             .attr('fill', (node) => {
                 const scale = d3.scaleOrdinal(d3.schemeCategory10);
                 scale.domain(this.jobtitles);
                 return scale(node.jobtitle);
             })
+            .on("mouseover", (d, i) => console.log(i.name))
 
+        if(firstRun) this.drawnNodes.attr('transform', `translate(${(this.width * this.scale) / 2},${(this.height * this.scale) / 2})`)
+        else this.drawnNodes.attr('transform', `translate(0,0)`)
     }
 
-    ticked() {
-        this.updateEdges()
-        this.updateNodes()
+    ticked(firstRun = false) {
+        this.updateEdges(firstRun)
+        this.updateNodes(firstRun)
     }
 
 

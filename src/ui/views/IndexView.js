@@ -16,7 +16,10 @@ export default class IndexView {
             //m(NodeLinkDiagramComponent, {main: vnode.attrs.main})
             <div>
                 <TimebarComponent main={vnode.attrs.main}></TimebarComponent>
-                <NodeLinkDiagramComponent main={vnode.attrs.main}></NodeLinkDiagramComponent>
+                <div class="visualizations">
+                    <HierarchicalEdgeComponent main={vnode.attrs.main}></HierarchicalEdgeComponent>
+                    <NodeLinkDiagramComponent main={vnode.attrs.main}></NodeLinkDiagramComponent>
+                </div>
             </div>
         );
         // HTML syntax that is returned may only contain one root element

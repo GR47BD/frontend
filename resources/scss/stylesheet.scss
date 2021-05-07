@@ -13,17 +13,20 @@
 
 .hier-stroke {
 	stroke: steelblue;
-	stroke-opacity: 0.05;
 	fill: none;
 	pointer-events: none;
 }
 
 .hier-node {
 	font-family: 'Helvetica';
-	fill: #505050;
+	transition: font-weight .3s;
 }
 
 .hier-node:hover {
-	fill :black;
 	font-weight: bolder;
+}
+
+.visualizations {
+	display: flex;
+	flex-direction: row;
 }
