@@ -2,6 +2,7 @@ import m from "mithril";
 import * as d3 from "d3";
 import Visualization from "@/visualize/Visualization";
 
+
 export default class NodeLinkDiagramComponent extends Visualization {
     oninit(vnode) {
         super.oninit(vnode);
@@ -59,9 +60,39 @@ export default class NodeLinkDiagramComponent extends Visualization {
             return {
                 id: person.id,
                 jobtitle: person.jobtitle,
-                name: this.main.dataHandler.emailToName(person.email)
+                name: this.main.dataHandler.emailToName(person.email),
+                highlighted: false
             }
         });
+
+
+        // Create a map that maps from node id to index in the nodes array
+        this.personsIndex = new Map();
+        for(let i = 0; i < this.nodes.length; i++){
+            this.personsIndex.set(this.nodes[i].id, i);
+        }
+
+        // console.log(this.nodes);
+        // console.log(this.edges);
+
+        //Remove edges that go between the same nodes
+        // this.filteredEmails = this.emails.filter((item1,index,array)=>array.findIndex(item2=>(item1.fromId === item2.fromId && item1.toId === item2.toId))===index)
+
+        // this.edges = this.allEmails.map(function (email) {
+        //     return {
+        //         source: email.fromId,
+        //         target: email.toId,
+        //         sentiment: email.sentiment,     
+        //         date: email.date
+        //     }
+        // })
+
+
+        this.allEmails = [...this.edges];
+
+        // console.log(this.allEmails)
+
+        // console.log(this.edges);
 
         let node_link_diagram = d3.select('#node_link_diagram');
         this.svg = node_link_diagram.append('svg')
@@ -81,11 +112,15 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 .iterations(this.collideForce.iterations))
             .tick(this.forces.ticks);
 
-        this.step();
-        this.ticked(true);
-    }
+            this.step();
 
-    step(){
+            this.ticked(true);
+            
+    }
+    
+
+    step() {
+        console.log('step')
         this.update();
     }
 
@@ -141,13 +176,14 @@ export default class NodeLinkDiagramComponent extends Visualization {
         const centerStrength = this.centerForce.basis - (this.edges.length / this.centerForce.divider) * this.centerForce.penalty;
         // Set all nodes
         this.simulation.nodes(this.nodes)
+
         this.simulation.force('link').links(this.edges);
         // Change the strength of a link relative to the number of emails in that link
         this.simulation.force('link').strength(link => (link.nr/this.maxNr)*this.linkForce.amountBonus + linkStrength);
         
         this.simulation.force('center').strength(centerStrength);
         // Set edges
-        this.simulation.alpha(this.forces.alpha).restart();
+        this.simulation.restart();
         this.simulation.on('tick', this.ticked());
     }
 
@@ -186,14 +222,39 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 return d.y * this.dimensions.scale
             })
             .attr('fill', (node) => {
+                if(node.highlighted) return '#000000';
                 const scale = d3.scaleOrdinal(d3.schemeCategory10);
                 scale.domain(this.jobtitles);
                 return scale(node.jobtitle);
             })
-            .on("mouseover", (d, i) => console.log(i.name))
+            
+            .on("mouseover", (d, i) => {
+                this.main.visualizer.selectNode(i.id);
+                // console.log(i.name)
+                // console.log(i)
+            })
+            .on('mouseout', (d, i) => {
+                this.main.visualizer.deselectNode(i.id);
+            })
 
         if(firstRun) this.drawnNodes.attr('transform', `translate(${(this.dimensions.width * this.dimensions.scale) / 2},${(this.dimensions.height * this.dimensions.scale) / 2})`)
         else this.drawnNodes.attr('transform', `translate(0,0)`)
+    }
+
+    selectNode(id){
+        //Get the location of the selected person in the nodes array
+        let nodeIndex = this.personsIndex.get(id);
+        //Set highlighted to true
+        this.nodes[nodeIndex].highlighted = true;
+        super.selectNode();
+    }
+
+    deselectNode(id){
+        //Get the location of the selected person in the nodes array
+        let nodeIndex = this.personsIndex.get(id);
+        //Set highlighted to false
+        this.nodes[nodeIndex].highlighted = false;
+        super.deselectNode();
     }
 
     ticked(firstRun = false) {

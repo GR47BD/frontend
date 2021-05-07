@@ -48,4 +48,15 @@ export default class Visualizer {
             visualization.step();
         }
     }
+
+    selectNode(id){
+        for(const visualization of this.visualizations.values()){
+            visualization.selectNode(id);
+        }
+    }
+    deselectNode(id){
+        for(const visualization of this.visualizations.values()){
+            visualization.deselectNode(id);
+        }
+    }
 }
