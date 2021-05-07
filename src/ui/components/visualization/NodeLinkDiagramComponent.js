@@ -88,8 +88,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // })
 
 
-        this.allEmails = [...this.edges];
-
         // console.log(this.allEmails)
 
         // console.log(this.edges);
