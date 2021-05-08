@@ -22,18 +22,26 @@ export default class Visualization {
      step() {}
 
      /**
-      * Called when you select a node in one of the graphs.
+      * Called when you hover over a node in one of the graphs.
       * @param {string} id 
       */
-     selectNode(id) {
+    mouseOverNode(id) {
         this.update();
      }
 
      /**
-      * Called when you deselect a node in one of the graphs.
+      * Called when you stop hovering a node in one of the graphs.
       * @param {string} id 
       */
-     deselectNode(id){
+    mouseOutNode(id){
          this.update();
-     }
+    }
+
+    mouseDownNode(id){
+        this.update();
+    }
+
+    mouseUpNode(id){
+        this.update();
+    }
 }

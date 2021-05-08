@@ -41,6 +41,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         this.edgeOptions = {
             strokeWidth: 0.5,
+            highlightedStrokeWidth: 2,
             basis: 0.2,
             amountBonus: 0.4
         }
@@ -48,6 +49,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.nodeOptions = {
             radius: 5
         }
+
+        this.edgesToHighlight = []
     }
 
     oncreate() {
@@ -135,19 +138,21 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 target: email.toId,
                 sentiment: email.sentiment,     
                 date: email.date,
-                nr: 1
+                nr: 1,
+                highlighted: false
             }
         });
 
-        const mailMap = new Map();
+        this.mailMap = new Map();
         this.maxNr = 0;
 
+        
         for(const email of emails) {
             const key = email.source + "." + email.target;
-            const mapValue = mailMap.get(key)
+            const mapValue = this.mailMap.get(key)
 
             if(mapValue === undefined) {
-                mailMap.set(key, email);
+                this.mailMap.set(key, email);
                 this.maxNr = 1;
             }
             else {
@@ -156,7 +161,14 @@ export default class NodeLinkDiagramComponent extends Visualization {
             }
         }
 
-        this.edges = Array.from(mailMap.values());
+        // Make sure all edges that should be highlighted get highlighted
+        for(let i = 0; i < this.edgesToHighlight.length; i++){
+            let edge =this.mailMap.get(this.edgesToHighlight[i]);
+            edge.highlighted = true;
+        }
+
+        this.edges = Array.from(this.mailMap.values());
+
 
         // Set edge data
         // Remove any old edges drawn on the DOM
@@ -202,9 +214,15 @@ export default class NodeLinkDiagramComponent extends Visualization {
             })
             .attr('stroke', edge => {
                 const alpha = (this.edgeOptions.amountBonus * edge.nr / this.maxNr + this.edgeOptions.basis).toFixed(2);
+                if(edge.highlighted){
+                    return `rgba(200,100,0,${alpha})`;
+                }
                 return `rgba(0,0,0,${alpha})`;
             })
-            .attr('stroke-width', this.edgeOptions.strokeWidth);
+            .attr('stroke-width', edge => {
+                if(edge.highlighted) return this.edgeOptions.highlightedStrokeWidth;
+                else return this.edgeOptions.strokeWidth;
+            });
 
         if(firstRun) this.drawnEdges.attr('transform', `translate(${(this.dimensions.width * this.dimensions.scale) / 2},${(this.dimensions.height * this.dimensions.scale) / 2})`)
         else this.drawnEdges.attr('transform', `translate(0,0)`)
@@ -227,32 +245,57 @@ export default class NodeLinkDiagramComponent extends Visualization {
             })
             
             .on("mouseover", (d, i) => {
-                this.main.visualizer.selectNode(i.id);
-                // console.log(i.name)
-                // console.log(i)
+                this.main.visualizer.mouseOverNode(i.id);
             })
             .on('mouseout', (d, i) => {
-                this.main.visualizer.deselectNode(i.id);
+                this.main.visualizer.mouseOutNode(i.id);
+            })
+            .on('mouseup', (d, i) => {
+
+                return this.main.visualizer.mouseUpNode(i.id)
+            })
+            .on('mousedown', (d, i) => {
+                // console.log("mousedown" + i)
+                return this.main.visualizer.mouseDownNode(i.id)
             })
 
         if(firstRun) this.drawnNodes.attr('transform', `translate(${(this.dimensions.width * this.dimensions.scale) / 2},${(this.dimensions.height * this.dimensions.scale) / 2})`)
         else this.drawnNodes.attr('transform', `translate(0,0)`)
     }
 
-    selectNode(id){
+    mouseOverNode(id){
         //Get the location of the selected person in the nodes array
         let nodeIndex = this.personsIndex.get(id);
         //Set highlighted to true
         this.nodes[nodeIndex].highlighted = true;
-        super.selectNode();
+
+        super.mouseOverNode();
     }
 
-    deselectNode(id){
+    mouseOutNode(id){
         //Get the location of the selected person in the nodes array
         let nodeIndex = this.personsIndex.get(id);
         //Set highlighted to false
         this.nodes[nodeIndex].highlighted = false;
-        super.deselectNode();
+
+        super.mouseOutNode();
+    }
+
+    mouseDownNode(id){
+        // get all connected edges
+        // getEmailsForPerson might not be very efficient 
+        let adjacentEmails = this.main.dataHandler.getEmailsForPerson(id);
+        // console.log('mousedown function')
+        for(let i = 0; i < adjacentEmails.length; i++){
+            this.edgesToHighlight.push(adjacentEmails[i].fromId + '.' + adjacentEmails[i].toId);       
+        }
+        super.mouseDownNode();
+    }
+
+    mouseUpNode(id){
+        // For now just emptying the array works just fine, however in the future this might not be the best  idea
+        this.edgesToHighlight = [];
+        super.mouseUpNode();
     }
 
     ticked(firstRun = false) {

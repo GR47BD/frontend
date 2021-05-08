@@ -49,14 +49,25 @@ export default class Visualizer {
         }
     }
 
-    selectNode(id){
+    mouseOverNode(id){
         for(const visualization of this.visualizations.values()){
-            visualization.selectNode(id);
+            visualization.mouseOverNode(id);
         }
     }
-    deselectNode(id){
+    mouseOutNode(id){
         for(const visualization of this.visualizations.values()){
-            visualization.deselectNode(id);
+            visualization.mouseOutNode(id);
+        }
+    }
+
+    mouseDownNode(id){
+        for(const visualization of this.visualizations.values()){
+            visualization.mouseDownNode(id);
+        }
+    }
+    mouseUpNode(id){
+        for(const visualization of this.visualizations.values()){
+            visualization.mouseUpNode(id);
         }
     }
 }
