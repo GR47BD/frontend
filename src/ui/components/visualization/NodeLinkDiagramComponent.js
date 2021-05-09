@@ -1,6 +1,7 @@
 import m from "mithril";
 import * as d3 from "d3";
 import Visualization from "@/visualize/Visualization";
+import { thresholdFreedmanDiaconis } from "d3";
 
 
 export default class NodeLinkDiagramComponent extends Visualization {
@@ -56,6 +57,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
     oncreate() {
         this.main.visualizer.addVisualization('NodeLinkDiagram', this);
 
+        this.draw();
+    }
+
+    async draw(){
+
         const persons = this.main.dataHandler.getPersons('filtered');
 
         this.jobtitles = this.main.dataHandler.getJobTitles();
@@ -75,26 +81,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
             this.personsIndex.set(this.nodes[i].id, i);
         }
 
-        // console.log(this.nodes);
-        // console.log(this.edges);
-
-        //Remove edges that go between the same nodes
-        // this.filteredEmails = this.emails.filter((item1,index,array)=>array.findIndex(item2=>(item1.fromId === item2.fromId && item1.toId === item2.toId))===index)
-
-        // this.edges = this.allEmails.map(function (email) {
-        //     return {
-        //         source: email.fromId,
-        //         target: email.toId,
-        //         sentiment: email.sentiment,     
-        //         date: email.date
-        //     }
-        // })
-
-
-        // console.log(this.allEmails)
-
-        // console.log(this.edges);
-
         let node_link_diagram = d3.select('#node_link_diagram');
         this.svg = node_link_diagram.append('svg')
             .attr('width', this.dimensions.width * this.dimensions.scale)
@@ -113,11 +99,22 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 .iterations(this.collideForce.iterations))
             .tick(this.forces.ticks);
 
+        
             this.step();
 
+            // Make sure the graph is in the middle the first time
             this.ticked(true);
-            
+
+            // after 5 seconds the visualization can be drawn correctly for some reason, so we wait 5 seconds to redraw it.
+            // A very bad solution for the problem which needs to be changed later.
+            await this.sleep(5000);
+            this.ticked();
+
     }
+
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
     
 
     step() {
