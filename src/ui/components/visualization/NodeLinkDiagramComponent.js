@@ -84,7 +84,9 @@ export default class NodeLinkDiagramComponent extends Visualization {
         let node_link_diagram = d3.select('#node_link_diagram');
         this.svg = node_link_diagram.append('svg')
             .attr('width', this.dimensions.width * this.dimensions.scale)
-            .attr('height', this.dimensions.height * this.dimensions.scale);          
+            .attr('height', this.dimensions.height * this.dimensions.scale)  
+            .attr("shape-rendering", "optimizeSpeed")
+			.attr("image-rendering", "optimizeSpeed");
         
         this.drawnEdges = this.svg.append('g').attr("class", "edge").selectAll('line');
         this.drawnNodes = this.svg.append('g').attr("class", "node").selectAll('circle');
@@ -100,10 +102,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .tick(this.forces.ticks);
 
         
-            this.step();
+            this.step(true);
 
             // Make sure the graph is in the middle the first time
             this.ticked(true);
+
 
             // after 5 seconds the visualization can be drawn correctly for some reason, so we wait 5 seconds to redraw it.
             // A very bad solution for the problem which needs to be changed later.
@@ -117,14 +120,17 @@ export default class NodeLinkDiagramComponent extends Visualization {
       }
     
 
-    step() {
+    step(firstRun = false) {
         console.log('step')
-        this.update();
+        this.update(firstRun);
     }
 
-    update(){
-        this.drawnEdges = this.svg.select('.edge').selectAll('line');
-        this.drawnNodes = this.svg.select('.node').selectAll('circle');
+    update(firstRun = false){
+        if(firstRun){
+            this.drawnEdges = this.svg.select('.edge').selectAll('line');
+            this.drawnNodes = this.svg.select('.node').selectAll('circle');
+        }
+        
 
         // emails of current timeframe
         let emails = this.main.dataHandler.getEmails();
@@ -219,7 +225,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .attr('stroke-width', edge => {
                 if(edge.highlighted) return this.edgeOptions.highlightedStrokeWidth;
                 else return this.edgeOptions.strokeWidth;
-            });
+            })
+            .attr('class', '.edge');
 
         if(firstRun) this.drawnEdges.attr('transform', `translate(${(this.dimensions.width * this.dimensions.scale) / 2},${(this.dimensions.height * this.dimensions.scale) / 2})`)
         else this.drawnEdges.attr('transform', `translate(0,0)`)
@@ -255,6 +262,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 // console.log("mousedown" + i)
                 return this.main.visualizer.mouseDownNode(i.id)
             })
+            .attr('class', '.node');
 
         if(firstRun) this.drawnNodes.attr('transform', `translate(${(this.dimensions.width * this.dimensions.scale) / 2},${(this.dimensions.height * this.dimensions.scale) / 2})`)
         else this.drawnNodes.attr('transform', `translate(0,0)`)

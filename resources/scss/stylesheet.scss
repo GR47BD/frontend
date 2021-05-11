@@ -26,6 +26,10 @@
 	font-weight: bolder;
 }
 
+.node:hover {
+	fill: white;
+}
+
 .visualizations {
 	display: flex;
 	flex-direction: row;
