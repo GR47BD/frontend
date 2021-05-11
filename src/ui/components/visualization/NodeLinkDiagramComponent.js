@@ -5,9 +5,9 @@ import { thresholdFreedmanDiaconis } from "d3";
 
 
 export default class NodeLinkDiagramComponent extends Visualization {
-    oninit(vnode) {
-        super.oninit(vnode);
 
+    constructor(){
+        super();
         this.dimensions = {
             scale: 2,
             width: 500,
@@ -51,7 +51,18 @@ export default class NodeLinkDiagramComponent extends Visualization {
             radius: 5
         }
 
+        this.simulationSettings = {
+            startAlpha: 1,
+            alphaTarget: 0.01,
+            alphaDecay: 0.05            
+        }
+
         this.edgesToHighlight = []
+    }
+    oninit(vnode) {
+        super.oninit(vnode);
+
+        
     }
 
     oncreate() {
@@ -99,19 +110,19 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .force('collide', d3.forceCollide(d => this.collideForce.radius)
                 .strength(this.collideForce.strength)
                 .iterations(this.collideForce.iterations))
-            .tick(this.forces.ticks);
+                .tick(this.forces.ticks);
 
         
             this.step(true);
 
             // Make sure the graph is in the middle the first time
-            this.ticked(true);
+            // this.ticked(true);
 
 
             // after 5 seconds the visualization can be drawn correctly for some reason, so we wait 5 seconds to redraw it.
             // A very bad solution for the problem which needs to be changed later.
-            await this.sleep(5000);
-            this.ticked();
+            // await this.sleep(5000);
+            // this.ticked();
 
     }
 
@@ -122,14 +133,16 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     step(firstRun = false) {
         console.log('step')
-        this.update(firstRun);
-    }
+        this.update(firstRun, 0.2);
+    } 
 
-    update(firstRun = false){
+    update(firstRun = false, dataChanged = 0){
         if(firstRun){
             this.drawnEdges = this.svg.select('.edge').selectAll('line');
             this.drawnNodes = this.svg.select('.node').selectAll('circle');
+            dataChanged = 1
         }
+
         
 
         // emails of current timeframe
@@ -196,8 +209,14 @@ export default class NodeLinkDiagramComponent extends Visualization {
         
         this.simulation.force('center').strength(centerStrength);
         // Set edges
-        this.simulation.restart();
-        this.simulation.on('tick', this.ticked());
+        if(dataChanged != 0) this.simulation.alpha(dataChanged);
+        
+        this.simulation.alphaTarget(this.simulationSettings.alphaTarget).alphaDecay(this.simulationSettings.alphaDecay).restart();
+        this.simulation.on('tick', () => {
+            console.log(this.simulation.alpha());
+            this.updateEdges();
+            this.updateNodes();
+        });
     }
 
     updateEdges(firstRun) {
@@ -282,6 +301,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         let nodeIndex = this.personsIndex.get(id);
         //Set highlighted to false
         this.nodes[nodeIndex].highlighted = false;
+        this.edgesToHighlight = [];
 
         super.mouseOutNode();
     }
@@ -301,11 +321,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // For now just emptying the array works just fine, however in the future this might not be the best  idea
         this.edgesToHighlight = [];
         super.mouseUpNode();
-    }
-
-    ticked(firstRun = false) {
-        this.updateEdges(firstRun)
-        this.updateNodes(firstRun)
     }
 
     view() {
