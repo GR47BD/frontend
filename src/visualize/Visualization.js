@@ -14,7 +14,9 @@ export default class Visualization {
     /**
      * Called when the data has changed and the visualization has to be redrawn.
      */
-    update() {}
+    update() {
+        this.main.dataHandler.dataChanged = false;
+    }
 
     /**
      * Called when there has been a step through the timespan.

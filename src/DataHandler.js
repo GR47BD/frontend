@@ -42,6 +42,12 @@ export default class DataHandler {
          * The persons for each list of data
          */
         this.persons = {}
+
+        // Ratio between 0 and 1 in how much the data has changed since last updateTimed
+        this.dataChangedAmount = undefined;
+
+        // Boolean whether or not the data has changed since last iteration
+        this.dataChanged = true;
     }
 
     /**
@@ -71,6 +77,7 @@ export default class DataHandler {
      * Updates the data by re-applying the changed filters and selecting the data in the correct time span.
      */
     update() {
+        this.dataChanged = true;
         this.updateFiltered();
         this.updateTimed();
     }
@@ -132,6 +139,8 @@ export default class DataHandler {
      * @param {Boolean} timedOnly If the only change to the data was a step.
      */
     updateTimed(timedOnly = false) {
+        this.dataChanged = true;
+
         let newFirstIndex = 0;
         let newLastIndex = 0;
 
@@ -186,10 +195,14 @@ export default class DataHandler {
             this.timedData = this.timedData.slice(this.lastIndex-newLastIndex);
         }
 
+   
+        this.dataChangedAmount = (Math.abs(newFirstIndex - this.firstIndex) + Math.abs(newLastIndex - this.lastIndex)) / this.data.length;
+        
         this.firstIndex = newFirstIndex;
         this.lastIndex = newLastIndex;
 
         this.jobTitles.timed = undefined;
+        
         this.persons.timed = undefined;
 
         if(timedOnly) {
@@ -241,38 +254,44 @@ export default class DataHandler {
      *
      */
     getPersons(selection = "timed"){
-        const data = this.dataFromSelectionName(selection);
-
         // If personsData does not exist yet, define it
         if(this.persons[selection] === undefined){
-            let persons = [];
-
-            for(let i = 0; i < data.length; i++){
-                // Checks if this emails fromId was already in the persons array
-                if(!persons.some(item => item.id === data[i].fromId)) {
-                    // If not then add that person
-                    persons.push({
-                        id: data[i].fromId,
-                        email: data[i].fromEmail,
-                        jobtitle: data[i].fromJobtitle
-                    });
-                }
-                // Checks if this emails toId was already in the persons array
-                if(!persons.some(item => item.id === data[i].toId)){
-                    // If not then add that person
-                    persons.push({
-                        id: data[i].toId,
-                        email: data[i].toEmail,
-                        jobtitle: data[i].toJobtitle
-                    });
-                }                         
-            }
-
-            this.persons[selection] = persons;
+            this.updatePersons(selection);
         }
 
         return this.persons[selection];
     }
+
+    updatePersons(selection = "timed"){
+        const data = this.dataFromSelectionName(selection);
+
+        let persons = [];
+        
+
+        for(let i = 0; i < data.length; i++){
+            // Checks if this emails fromId was already in the persons array
+            if(!persons.some(item => item.id === data[i].fromId)) {
+                // If not then add that person
+                persons.push({
+                    id: data[i].fromId,
+                    email: data[i].fromEmail,
+                    jobtitle: data[i].fromJobtitle
+                });
+            }
+            // Checks if this emails toId was already in the persons array
+            if(!persons.some(item => item.id === data[i].toId)){
+                // If not then add that person
+                persons.push({
+                    id: data[i].toId,
+                    email: data[i].toEmail,
+                    jobtitle: data[i].toJobtitle
+                });
+            }                         
+        }
+
+        this.persons[selection] = persons;
+    }
+
 
     /**
      *
