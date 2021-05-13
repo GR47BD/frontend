@@ -100,6 +100,11 @@ body {
 	stroke: steelblue;
 	fill: none;
 	pointer-events: none;
+
+	&.highlighted {
+		stroke: red;
+		z-index: 100;
+	}
 }
 
 .hier-node {

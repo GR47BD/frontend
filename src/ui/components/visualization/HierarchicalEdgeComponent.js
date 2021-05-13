@@ -9,14 +9,15 @@ export default class HierarchicalEdgeComponent extends Visualization {
         super.oninit(vnode);
 
 		this.options = {
-			diameter: 820,
+			diameter: 700,
 			nameWidth: 120
 		}
 
 		this.lineOptions = {
 			tension: 0.85,
 			basis: 0.15,
-			amountBonus: 0.7
+			amountBonus: 0.7,
+			highlightBonus: 0.3
 		}
     }
 
@@ -28,6 +29,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
     createHierarchicalEdgeGraph(vnode){     
 		this.main.visualizer.addVisualization('HierarchicalEdgeComponent', this);
 
+		this.highlighted = new Map();
 		this.jobtitles = this.main.dataHandler.getJobTitles();
 		const radius = this.options.diameter / 2;
 		const innerRadius = radius - this.options.nameWidth;
@@ -53,22 +55,29 @@ export default class HierarchicalEdgeComponent extends Visualization {
 
 		const root = this.update();
 
-	// Create the nodes     
-	this.node = this.node
-		.data(root.leaves())
-		.enter().append("text")
-		.attr("dy", "0.31em")
-		.attr("transform", d => `rotate(${d.x - 90})translate(${d.y + 8},0)${d.x < 180 ? "" : "rotate(180)"}`)
-		.attr("text-anchor", d => d.x < 180 ? "start" : "end")
-		.text(d => d.data.key)
-		.style("font-size", this.options.diameter/65 + "px")
-		.attr("class", "hier-node")
-		.attr('fill', node => {
-			const scale = d3.scaleOrdinal(d3.schemeCategory10);
-			scale.domain(this.jobtitles);
-			return scale(node.data.parent.key);
-		});
-
+		// Create the nodes     
+		this.node = this.node
+			.data(root.leaves())
+			.enter().append("text")
+			.attr("dy", "0.31em")
+			.attr("transform", d => `rotate(${d.x - 90})translate(${d.y + 8},0)${d.x < 180 ? "" : "rotate(180)"}`)
+			.attr("text-anchor", d => d.x < 180 ? "start" : "end")
+			.text(d => d.data.key)
+			.style("font-size", this.options.diameter/65 + "px")
+			.attr("class", "hier-node")
+			.attr('fill', node => {
+				const scale = d3.scaleOrdinal(d3.schemeCategory10);
+				scale.domain(this.jobtitles);
+				return scale(node.data.parent.key);
+			})
+			.on('mouseup', (d, i) => {
+				this.highlighted.set(i.data.name, false)
+				this.update();
+            })
+            .on('mousedown', (d, i) => {
+				this.highlighted.set(i.data.name, true)
+				this.update();
+            });
 	}
 
 	update() {
@@ -137,8 +146,15 @@ export default class HierarchicalEdgeComponent extends Visualization {
 				d.target = d[d.length - 1]
 			})
 			.attr("d", this.line)
-			.attr("class", "hier-stroke")
-			.attr("opacity", (link, value) => this.lineOptions.basis + this.lineOptions.amountBonus * (this.emails[value].nr/this.maxNr));
+			.attr("class", link => {
+				const highlighted = this.highlighted.get(link.target.data.name) || this.highlighted.get(link.source.data.name);
+
+				return highlighted ? "hier-stroke highlighted" : "hier-stroke"})
+			.attr("opacity", (link, value) => {
+				const highlighted = this.highlighted.get(link.target.data.name) || this.highlighted.get(link.source.data.name);
+				const opacity = this.lineOptions.basis + this.lineOptions.amountBonus * (this.emails[value].nr/this.maxNr) + (highlighted ? this.lineOptions.highlightBonus : 0);
+				
+				return opacity > 1 ? 1 : opacity});
 
 		return root;
 	}
