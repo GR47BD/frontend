@@ -265,33 +265,34 @@ export default class DataHandler {
     updatePersons(selection = "timed"){
         const data = this.dataFromSelectionName(selection);
 
-        let persons = [];
-        
+        let persons = new Map();        
 
         for(let i = 0; i < data.length; i++){
+
             // Checks if this emails fromId was already in the persons array
-            if(!persons.some(item => item.id === data[i].fromId)) {
+            if(!persons.has(data[i].fromId)){
                 // If not then add that person
-                persons.push({
+                persons.set(data[i].fromId, {
                     id: data[i].fromId,
                     email: data[i].fromEmail,
                     jobtitle: data[i].fromJobtitle
                 });
-            }
+            } 
             // Checks if this emails toId was already in the persons array
-            if(!persons.some(item => item.id === data[i].toId)){
+            if(!persons.has(data[i].toId)){
                 // If not then add that person
-                persons.push({
+                persons.set(data[i].toId, {
                     id: data[i].toId,
                     email: data[i].toEmail,
                     jobtitle: data[i].toJobtitle
                 });
-            }                         
+            }
+                      
         }
-
-        this.persons[selection] = persons;
+        //convert the map to an array
+        this.persons[selection] = [...persons.values()];
     }
-
+    
 
     /**
      *
@@ -301,9 +302,13 @@ export default class DataHandler {
         const persons = this.getPersons(selection);
 
         if(this.jobTitles[selection] === undefined){
-             let duplicateJobTitles = persons.map(item => item.jobtitle);
-             this.jobTitles[selection] = duplicateJobTitles.filter((item1, index, array) => {
-                 return array.findIndex(item2 => (item1 == item2)) === index});
+            let jobtitles = new Set();
+
+            persons.forEach(value => {
+                jobtitles.add(value.jobtitle);
+            });
+
+            this.jobTitles[selection] = [...jobtitles];
         }
 
         return this.jobTitles[selection];
