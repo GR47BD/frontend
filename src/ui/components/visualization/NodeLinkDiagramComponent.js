@@ -97,7 +97,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
     
 
     step(firstRun = false) {
-        console.log('step')
         this.update(firstRun);
     } 
 
@@ -110,8 +109,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
             dataChangedAmount = 1;
             const persons = this.main.dataHandler.getPersons();
 
-            console.log(persons)
-
             this.nodes = persons.map(person => {
                 return {
                     id: person.id,
@@ -123,77 +120,12 @@ export default class NodeLinkDiagramComponent extends Visualization {
         }
 
         if(this.main.dataHandler.dataChanged){
-            const persons = this.main.dataHandler.getPersons();
+            this.updateData(dataChangedAmount);
+        }  
 
-            // Generic helper function that can be used for the three operations:        
-            const operation = (list1, list2, isUnion = false) =>
-                list1.filter(
-                    (set => a => isUnion === set.has(a.id))(new Set(list2.map(b => b.id)))
-                );
-
-            this.nodes = operation(this.nodes, persons, true);
-            let newNodes = operation(persons, this.nodes);
-
-            newNodes = newNodes.map(node => {
-                return {
-                    id: node.id,
-                    jobtitle: node.jobtitle,
-                    name: this.main.dataHandler.getPersons(node.email),
-                    highlighted: false,
-                    x: this.dimensions.width / 2,
-                    y: this.dimensions.height / 2
-                }
-            })
-
-            this.nodes.push(...newNodes);            
-
-            this.personsIndex = new Map();
-            for(let i = 0; i < this.nodes.length; i++){
-                this.personsIndex.set(this.nodes[i].id, i);
-            }
-
-            // emails of current timeframe
-            let emails = this.main.dataHandler.getEmails();
-
-            emails = emails.map(email => {
-                return {
-                    source: email.fromId,
-                    target: email.toId,
-                    sentiment: email.sentiment,     
-                    date: email.date,
-                    nr: 1,
-                    highlighted: false
-                }
-            });
-
-            this.mailMap = new Map();
-            this.maxNr = 0;
-            
-            for(const email of emails) {
-                const key = email.source + "." + email.target;
-                const mapValue = this.mailMap.get(key)
-
-                if(mapValue === undefined) {
-                    this.mailMap.set(key, email);
-                    this.maxNr = 1;
-                }
-                else {
-                    mapValue.nr += 1;
-                    this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;
-                }
-            }
-
-
-            this.edges = Array.from(this.mailMap.values());
-
-            let newAlpha = (dataChangedAmount * (0.5 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget;
-            this.simulation.alpha(newAlpha);
-        }
-
-        
         // Make sure all edges that should be highlighted get highlighted
         for(let i = 0; i < this.edgesToHighlight.length; i++){
-            let edge =this.mailMap.get(this.edgesToHighlight[i]);
+            let edge = this.mailMap.get(this.edgesToHighlight[i]);
             edge.highlighted = true;
         }
 
@@ -220,11 +152,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.simulation.force('link').strength(link => (link.nr/this.maxNr)*this.linkForce.amountBonus + linkStrength);
         
         this.simulation.force('center').strength(centerStrength);
-        // Set edges
-        // if(dataChanged != 0) this.simulation.alpha(dataChanged);
-        
-        // console.log(newAlpha);
-        
+                
         if(this.main.dataHandler.dataChanged){
             
             let newAlpha = (dataChangedAmount * (0.7 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget;
@@ -242,6 +170,75 @@ export default class NodeLinkDiagramComponent extends Visualization {
         });
 
         super.update();
+    }
+
+    compareLists(list1, list2, isUnion = false){
+        return list1.filter((set => a => isUnion === set.has(a.id))(new Set(list2.map(b => b.id))));
+    }
+
+    updateData(dataChangedAmount){
+        const persons = this.main.dataHandler.getPersons();
+
+        // Generic helper function that can be used for the three operations:        
+
+
+        this.nodes = this.compareLists(this.nodes, persons, true);
+        let newNodes = this.compareLists(persons, this.nodes);
+
+        newNodes = newNodes.map(node => {
+            return {
+                id: node.id,
+                jobtitle: node.jobtitle,
+                name: this.main.dataHandler.getPersons(node.email),
+                highlighted: false,
+                x: this.dimensions.width / 2,
+                y: this.dimensions.height / 2
+            }
+        })
+
+        this.nodes.push(...newNodes);            
+
+        this.personsIndex = new Map();
+        for(let i = 0; i < this.nodes.length; i++){
+            this.personsIndex.set(this.nodes[i].id, i);
+        }
+
+        // emails of current timeframe
+        let emails = this.main.dataHandler.getEmails();
+
+        emails = emails.map(email => {
+            return {
+                source: email.fromId,
+                target: email.toId,
+                sentiment: email.sentiment,     
+                date: email.date,
+                nr: 1,
+                highlighted: false
+            }
+        });
+
+        this.mailMap = new Map();
+        this.maxNr = 0;
+        
+        for(const email of emails) {
+            const key = email.source + "." + email.target;
+            const mapValue = this.mailMap.get(key)
+
+            if(mapValue === undefined) {
+                this.mailMap.set(key, email);
+                this.maxNr = 1;
+            }
+            else {
+                mapValue.nr += 1;
+                this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;
+            }
+        }
+
+
+        this.edges = Array.from(this.mailMap.values());
+
+        let newAlpha = (dataChangedAmount * (0.5 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget;
+        this.simulation.alpha(newAlpha);
     }
 
     updateEdges(firstRun) {
@@ -303,10 +300,9 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 return this.main.visualizer.mouseUpNode(i.id)
             })
             .on('mousedown', (d, i) => {
-                // console.log("mousedown" + i)
                 return this.main.visualizer.mouseDownNode(i.id)
             })
-            .attr('class', '.node');
+            .attr('class', 'node');
 
         if(firstRun) this.drawnNodes.attr('transform', `translate(${(this.dimensions.width) / 2},${(this.dimensions.height) / 2})`)
         else this.drawnNodes.attr('transform', `translate(0,0)`)
@@ -326,8 +322,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
         let nodeIndex = this.personsIndex.get(id);
         //Set highlighted to false
         this.nodes[nodeIndex].highlighted = false;
-
-
+        
+        for(let i = 0; i < this.edgesToHighlight.length; i++){
+            let edge = this.mailMap.get(this.edgesToHighlight[i]);
+            edge.highlighted = false;
+        }
 
         this.edgesToHighlight = [];
 
@@ -343,8 +342,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         console.log(this.nodes[nodeIndex]);
 
         let adjacentEmails = this.main.dataHandler.getEmailsForPerson(id);
-        console.log(adjacentEmails);
-        // console.log('mousedown function')
+
         for(let i = 0; i < adjacentEmails.length; i++){
             this.edgesToHighlight.push(adjacentEmails[i].fromId + '.' + adjacentEmails[i].toId);       
         }
@@ -353,9 +351,15 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     mouseUpNode(id){
         // For now just emptying the array works just fine, however in the future this might not be the best  idea
+        for(let i = 0; i < this.edgesToHighlight.length; i++){
+            let edge = this.mailMap.get(this.edgesToHighlight[i]);
+            edge.highlighted = false;
+        }
+
         this.edgesToHighlight = [];
         super.mouseUpNode();
     }
+
 
     view() {
         return (
