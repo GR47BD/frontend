@@ -1,7 +1,6 @@
 import m from "mithril";
 import * as d3 from "d3";
 import Visualization from "@/visualize/Visualization";
-import { thresholdFreedmanDiaconis } from "d3";
 
 
 export default class NodeLinkDiagramComponent extends Visualization {
@@ -70,9 +69,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         this.jobtitles = this.main.dataHandler.getJobTitles();
 
-        // Create a map that maps from node id to index in the nodes array
-
-
         let node_link_diagram = d3.select('#node_link_diagram');
         this.svg = node_link_diagram.append('svg')
             .attr('width', this.dimensions.width)
@@ -111,10 +107,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         if(firstRun){
             this.drawnEdges = this.svg.select('.edge').selectAll('line');
             this.drawnNodes = this.svg.select('.node').selectAll('circle');
-            dataChangedAmount = 1
-        }
-
-        if(this.main.dataHandler.dataChanged){
+            dataChangedAmount = 1;
             const persons = this.main.dataHandler.getPersons();
 
             console.log(persons)
@@ -127,12 +120,37 @@ export default class NodeLinkDiagramComponent extends Visualization {
                     highlighted: false
                 }
             });
+        }
+
+        if(this.main.dataHandler.dataChanged){
+            const persons = this.main.dataHandler.getPersons();
+
+            // Generic helper function that can be used for the three operations:        
+            const operation = (list1, list2, isUnion = false) =>
+                list1.filter(
+                    (set => a => isUnion === set.has(a.id))(new Set(list2.map(b => b.id)))
+                );
+
+            this.nodes = operation(this.nodes, persons, true);
+            let newNodes = operation(persons, this.nodes);
+
+            newNodes = newNodes.map(node => {
+                return {
+                    id: node.id,
+                    jobtitle: node.jobtitle,
+                    name: this.main.dataHandler.getPersons(node.email),
+                    highlighted: false,
+                    x: this.dimensions.width / 2,
+                    y: this.dimensions.height / 2
+                }
+            })
+
+            this.nodes.push(...newNodes);            
 
             this.personsIndex = new Map();
             for(let i = 0; i < this.nodes.length; i++){
                 this.personsIndex.set(this.nodes[i].id, i);
             }
-
 
             // emails of current timeframe
             let emails = this.main.dataHandler.getEmails();
@@ -147,7 +165,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
                     highlighted: false
                 }
             });
-            // console.log(this.nodes);
 
             this.mailMap = new Map();
             this.maxNr = 0;
@@ -165,7 +182,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
                     this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;
                 }
             }
-
 
 
             this.edges = Array.from(this.mailMap.values());
@@ -215,15 +231,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
             let resetSimulationThreshold = 0.01;
             if(this.simulationSettings.alphaTarget - newAlpha > resetSimulationThreshold){
                 this.simulation.alpha(newAlpha);
-                console.log('dataChanged, restart with ' + newAlpha);
-            }
-            
+            }           
 
-        }
-        
+        }        
 
         this.simulation.on('tick', () => {
-            // console.log(this.simulation.alpha());
 
             this.updateEdges(this.main.dataHandler.dataChanged);
             this.updateNodes(this.main.dataHandler.dataChanged);
@@ -350,4 +362,5 @@ export default class NodeLinkDiagramComponent extends Visualization {
             <div id='node_link_diagram'></div>
         );
     }
+
 }
