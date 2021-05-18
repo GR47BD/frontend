@@ -101,15 +101,43 @@ body {
 	fill: none;
 	pointer-events: none;
 
-	&.highlighted {
+	&.highlightedOut {
 		stroke: red;
 		z-index: 100;
+	}
+	&.highlightedIn {
+		stroke: green;
+		z-index: 100;
+	}
+	&.white {
+		stroke: white;
+		opacity: 0;
 	}
 }
 
 .hier-node {
 	font-family: 'Helvetica';
 	transition: font-weight .3s;
+
+	&.selected {
+		fill: black;
+		font-weight: bolder;
+	}
+
+	&.target {
+		fill: red;
+		font-weight: bolder;
+	}
+
+	&.source {
+		fill: green;
+		font-weight: bolder;
+	}
+
+	&.both {
+		fill: blue;
+		font-weight: bolder;
+	}
 }
 
 .hier-node:hover {
