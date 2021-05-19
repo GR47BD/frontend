@@ -21,8 +21,8 @@ export default class TimebarComponent {
 			start: [timeSpan.startTime, timeSpan.endTime],
 			connect: true,
 			range: {
-				'min': timeSpan.minTime,
-				'max': timeSpan.maxTime
+				'min': timeSpan.minTime || 0,
+				'max': timeSpan.maxTime || 1
 			}
 		});
 
@@ -70,8 +70,10 @@ export default class TimebarComponent {
 		const timeSpan = this.main.dataHandler.timeSpan;
 
 		this.slider.updateOptions({
-			'min': timeSpan.minTime,
-			'max': timeSpan.maxTime
+			range: {
+				'min': timeSpan.minTime || 0,
+				'max': timeSpan.maxTime || 1
+			}
 		})
 		this.slider.set([timeSpan.startTime, timeSpan.endTime]);
 
@@ -81,7 +83,7 @@ export default class TimebarComponent {
 
 	/**
 	 * This function makes sure the time span is updated, and that the data corresponds the changed time span.
-	 */
+	 */	
 	updateTimespan() {
 		const sliderValues = this.slider.get();
 

@@ -3,6 +3,7 @@ import TestComponent from "@/ui/components/visualization/TestComponent.js";
 import NodeLinkDiagramComponent from "@/ui/components/visualization/NodeLinkDiagramComponent";
 import HierarchicalEdgeComponent from "@/ui/components/visualization/HierarchicalEdgeComponent";
 import TimebarComponent from "../components/TimebarComponent";
+import UploadButtonComponent from "../components/UploadButtonComponent";
 
 export default class IndexView {
     view(vnode) {
@@ -15,6 +16,7 @@ export default class IndexView {
             // </div>
             //m(NodeLinkDiagramComponent, {main: vnode.attrs.main})
             <div>
+                <UploadButtonComponent> </UploadButtonComponent>
                 <TimebarComponent main={vnode.attrs.main}></TimebarComponent>
                 <div class="visualizations">
                     <HierarchicalEdgeComponent main={vnode.attrs.main}></HierarchicalEdgeComponent>

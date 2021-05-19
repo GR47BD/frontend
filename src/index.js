@@ -12,7 +12,7 @@ class Main {
     }
 
     start() {
-        this.dataHandler.add("enron-v1", csvData);
+        //this.dataHandler.add("enron-v1", csvData);
         
         // We start rendering the ui.
         this.ui.render();
