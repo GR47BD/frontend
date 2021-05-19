@@ -1,9 +1,9 @@
 import m from "mithril";
 
 export default class DrawerComponent {
-    view() {
+    view(vnode) {
         return (
-            <div class="drawer"></div>
+            <div class="drawer">{vnode.children}</div>
         );
     }
 }

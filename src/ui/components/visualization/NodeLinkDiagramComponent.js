@@ -65,8 +65,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
     }
 
     oncreate() {
-        this.main.visualizer.addVisualization('NodeLinkDiagram', this);
+        if(!this.main.visualizer.getVisualization('NodeLinkDiagram')) {
+			this.main.visualizer.addVisualization('NodeLinkDiagram', this);
+		}
 
+		if(this.main.dataHandler.data.length === 0) return;
 
         this.jobtitles = this.main.dataHandler.getJobTitles();
 
@@ -95,13 +98,14 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.update(true);
     }
 
-    
-
     step(firstRun = false) {
         this.update(firstRun);
     } 
 
     update(firstRun = false){
+		if(this.main.dataHandler.data.length === 0) return;
+        if(!firstRun && this.nodes === undefined) return this.oncreate();
+
         let dataChangedAmount = this.main.dataHandler.dataChangedAmount;
 
         if(firstRun){
@@ -191,7 +195,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             return {
                 id: node.id,
                 jobtitle: node.jobtitle,
-                name: this.main.dataHandler.getPersons(node.email),
+                name: persons.find(person => person.email === node.email),
                 highlighted: false,
                 x: this.dimensions.width / 2,
                 y: this.dimensions.height / 2

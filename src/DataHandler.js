@@ -78,6 +78,8 @@ export default class DataHandler {
      */
     update() {
         this.dataChanged = true;
+        this.persons.all = undefined;
+        this.jobTitles.all = undefined;
         this.updateFiltered();
         this.updateTimed();
     }
@@ -114,8 +116,6 @@ export default class DataHandler {
 
         this.timeSpan.minTime = startTime;
         this.timeSpan.maxTime = endTime;
-
-        this.main.visualizer.update();
     }
 
     /**
@@ -255,7 +255,7 @@ export default class DataHandler {
      */
     getPersons(selection = "timed"){
         // If personsData does not exist yet, define it
-        if(this.persons[selection] === undefined){
+        if(this.persons[selection] === undefined || this.persons[selection].length === 0){
             this.updatePersons(selection);
         }
 
@@ -301,7 +301,7 @@ export default class DataHandler {
     getJobTitles(selection = "timed"){
         const persons = this.getPersons(selection);
 
-        if(this.jobTitles[selection] === undefined){
+        if(this.jobTitles[selection] === undefined || this.jobTitles[selection].length === 0){
             let jobtitles = new Set();
 
             persons.forEach(value => {
