@@ -1,6 +1,7 @@
 import m from "mithril";
 import * as d3 from "d3";
 import Visualization from "@/visualize/Visualization";
+import { forceLink } from "d3";
 
 
 export default class NodeLinkDiagramComponent extends Visualization {
@@ -16,7 +17,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             x: this.dimensions.width / 2,
             y: this.dimensions.height / 2,
             basis: 1,
-            divider: 3000,
+            divider: 4000,
             penalty: 0.3
         }
 
@@ -145,11 +146,15 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         const linkStrength = this.linkForce.basis - (this.edges.length / this.linkForce.divider) * this.linkForce.penalty;
         const centerStrength = this.centerForce.basis - (this.edges.length / this.centerForce.divider) * this.centerForce.penalty;
+
+        let weightScale = d3.scaleLinear().domain(d3.extent(this.edges, (edge) => this.maxNr - edge.nr)).range([.1, 2])
         
 
         this.simulation.force('link').links(this.edges);
         // Change the strength of a link relative to the number of emails in that link
-        this.simulation.force('link').strength(link => (link.nr/this.maxNr)*this.linkForce.amountBonus + linkStrength);
+        this.simulation.force('link')
+            // .strength(link => (link.nr/this.maxNr)*this.linkForce.amountBonus + linkStrength);
+            .strength(edge => weightScale(edge.nr));
         
         this.simulation.force('center').strength(centerStrength);
                 
@@ -178,9 +183,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     updateData(dataChangedAmount){
         const persons = this.main.dataHandler.getPersons();
-
-        // Generic helper function that can be used for the three operations:        
-
 
         this.nodes = this.compareLists(this.nodes, persons, true);
         let newNodes = this.compareLists(persons, this.nodes);
