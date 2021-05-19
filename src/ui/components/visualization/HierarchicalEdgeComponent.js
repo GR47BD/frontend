@@ -34,6 +34,8 @@ export default class HierarchicalEdgeComponent extends Visualization {
 		if(this.main.dataHandler.data.length === 0) return;
 
 		this.highlighted = new Map();
+		this.redNodes = new Map();
+		this.greenNodes = new Map();
 		this.jobtitles = this.main.dataHandler.getJobTitles();
 		
 		const radius = this.options.diameter / 2;
@@ -83,12 +85,64 @@ export default class HierarchicalEdgeComponent extends Visualization {
 				this.highlighted.set(i.data.name, true)
 				this.update();
             });
+
+		//#region 
+		//const persons = this.main.dataHandler.getPersons('all');
+		//var jobMapping = new Map();
+//
+		//for (const person of persons){
+		//	// Creating mapping of type: job title -> # people with this job title
+		//	const jobtitle_ = jobMapping.get(person.jobtitle);
+		//	if (jobtitle_ === undefined){
+		//		jobMapping.set(person.jobtitle, 1);
+		//	}
+		//	else{
+		//		jobMapping.set(person.jobtitle, jobtitle_+1);
+		//	}
+		//}
+//
+		//console.log(jobMapping);
+		//
+		//// Donut chart
+		//const color = d3.scaleOrdinal()
+		//	.domain(Object.keys(jobMapping))
+		//	.range(d3.schemeCategory10);
+//
+		//const pie = d3.pie()
+		//		.sort(null)
+		//		.value(function(d) {return d.value;})
+		//const data_ready = pie(jobMapping);		
+//
+		//const arc = d3.arc()
+		//		.innerRadius(this.options.diameter * 0.25)
+		//		.outerRadius(this.options.diameter * 0.4)
+//
+		//var second_svg = d3.select("#hierarchical_div")
+		//	.append("svg")
+		//	  .attr("width", 150)
+		//	  .attr("height", 250)
+		//	.append("g")
+		//	  .attr("transform", "translate(" + 150 / 2 + "," + 250 / 2 + ")");		
+//
+		//second_svg
+		//	.selectAll('allSlices')
+		//	.data(data_ready)
+		//	.enter()
+		//	.append('path')
+		//	.attr('d', arc)
+		//	.attr('fill', function(d){ return(color(d.data.key)) })
+		//	.attr("stroke", "white")
+		//	.style("stroke-width", "5px") // Padding between slices
+		//	.style("opacity", 0.9);		
+		//#endregion	
+
 	}
 
 	update() {
 		if(this.main.dataHandler.data.length === 0) return;
         if(this.cluster === undefined) return this.oncreate();
 
+		//#region 
 		const persons = this.main.dataHandler.getPersons('all');
 		const mapping = new Map();
 		const holder = this.main.dataHandler;
@@ -145,6 +199,8 @@ export default class HierarchicalEdgeComponent extends Visualization {
 			.sum(d => d.size);
 		this.cluster(root);
 
+		//#endregion
+
 		// Create the links
 		this.svg.selectAll("path").remove();
 		this.svg.selectAll("path").data(this.packageImports(root.leaves()))
@@ -155,20 +211,64 @@ export default class HierarchicalEdgeComponent extends Visualization {
 			})
 			.attr("d", this.line)
 			.attr("class", link => {
-				const highlighted = this.highlighted.get(link.target.data.name) || this.highlighted.get(link.source.data.name);
+				const highlightedOut = this.highlighted.get(link.target.data.name);
+				const highlightedIn = this.highlighted.get(link.source.data.name);
 
-				return highlighted ? "hier-stroke highlighted" : "hier-stroke"})
+				if (highlightedIn){
+					this.greenNodes.set(link.target.data.name, true);
+					return "hier-stroke highlightedIn";
+				}
+				else if(highlightedOut){
+					this.redNodes.set(link.source.data.name, true);
+					return "hier-stroke highlightedOut";
+				}
+				else{
+					return "hier-stroke";}
+			})
 			.attr("opacity", (link, value) => {
-				const highlighted = this.highlighted.get(link.target.data.name) || this.highlighted.get(link.source.data.name);
-				const opacity = this.lineOptions.basis + this.lineOptions.amountBonus * (this.emails[value].nr/this.maxNr) + (highlighted ? this.lineOptions.highlightBonus : 0);
-				
-				return opacity > 1 ? 1 : opacity});
+			const highlighted = this.highlighted.get(link.target.data.name) || this.highlighted.get(link.source.data.name);
+			const opacity = this.lineOptions.basis + this.lineOptions.amountBonus * (this.emails[value].nr/this.maxNr) + (highlighted ? this.lineOptions.highlightBonus : 0);
+			
+			return opacity > 1 ? 1 : opacity});
+
+			this.updateNodes();
 
 		return root;
 	}
 
 	step() {
 		this.update();
+	}
+
+	updateNodes() {
+		this.node = this.node
+			.attr("class", node =>{
+				const selected = this.highlighted.get(node.data.name);
+				const selectedSource = this.greenNodes.get(node.data.name);
+				const selectedTarget = this.redNodes.get(node.data.name);
+
+				if (selected) {
+					this.greenNodes.set(node.data.name, false);
+					return "hier-node selected";
+				}
+				else if (selectedSource && selectedTarget){
+					this.redNodes.set(node.data.name, false);
+					this.greenNodes.set(node.data.name, false);
+					return "hier-node both";
+				}
+				else if(selectedTarget){
+					this.redNodes.set(node.data.name, false);
+					return "hier-node target";
+				}
+				else if(selectedSource){
+					this.greenNodes.set(node.data.name, false);
+					return "hier-node source";
+				}
+				else {
+					return "hier-node";
+				}
+
+			});
 	}
 
 	// Create the hierarchy from node names
