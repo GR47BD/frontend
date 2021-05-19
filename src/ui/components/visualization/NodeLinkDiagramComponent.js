@@ -4,7 +4,7 @@ import Visualization from "@/visualize/Visualization";
 
 
 export default class NodeLinkDiagramComponent extends Visualization {
-
+    
     constructor(){
         super();
         this.dimensions = {
@@ -75,6 +75,14 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .attr('height', this.dimensions.height)  
             .attr("shape-rendering", "optimizeSpeed")
 			.attr("image-rendering", "optimizeSpeed");
+
+
+        let dragBehaviour = d3.drag()
+                                        .on("drag", this.dragMove)
+                                        .on("start", this.dragStart)
+                                        .on("end", this.dragEnd);
+        this.svg.call(dragBehaviour);
+            
         
         this.drawnEdges = this.svg.append('g').attr("class", "edge").selectAll('line');
         this.drawnNodes = this.svg.append('g').attr("class", "node").selectAll('circle');
@@ -91,6 +99,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         this.simulation.alphaTarget(this.simulationSettings.alphaTarget).alphaDecay(this.simulationSettings.alphaDecay);
         
+        
+
         this.update(true);
     }
 
@@ -359,6 +369,19 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.edgesToHighlight = [];
         super.mouseUpNode();
     }
+
+    dragStart(){
+        console.log('Drag start')
+    }
+
+    dragMove(){
+        console.log('Drag move')
+    }
+
+    dragEnd(){
+        console.log('Drag end')
+    }
+    
 
 
     view() {
