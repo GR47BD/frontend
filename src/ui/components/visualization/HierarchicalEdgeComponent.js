@@ -26,11 +26,16 @@ export default class HierarchicalEdgeComponent extends Visualization {
     }
 
     // A lot to improve on, but it works for now
-    createHierarchicalEdgeGraph(vnode){     
-		this.main.visualizer.addVisualization('HierarchicalEdgeComponent', this);
+    createHierarchicalEdgeGraph(vnode){   
+		if(!this.main.visualizer.getVisualization('HierarchicalEdgeComponent')) {
+			this.main.visualizer.addVisualization('HierarchicalEdgeComponent', this);
+		}
+
+		if(this.main.dataHandler.data.length === 0) return;
 
 		this.highlighted = new Map();
 		this.jobtitles = this.main.dataHandler.getJobTitles();
+		
 		const radius = this.options.diameter / 2;
 		const innerRadius = radius - this.options.nameWidth;
 		
@@ -81,6 +86,9 @@ export default class HierarchicalEdgeComponent extends Visualization {
 	}
 
 	update() {
+		if(this.main.dataHandler.data.length === 0) return;
+        if(this.cluster === undefined) return this.oncreate();
+
 		const persons = this.main.dataHandler.getPersons('all');
 		const mapping = new Map();
 		const holder = this.main.dataHandler;
