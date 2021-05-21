@@ -9,8 +9,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
     constructor(){
         super();
         this.dimensions = {
-            width: 700,
-            height: 700
+            width: 450,
+            height: 450
         }
 
         this.centerForce = {

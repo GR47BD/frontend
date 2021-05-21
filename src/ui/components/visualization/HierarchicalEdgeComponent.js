@@ -9,8 +9,8 @@ export default class HierarchicalEdgeComponent extends Visualization {
         super.oninit(vnode);
 
 		this.options = {
-			diameter: 700,
-			nameWidth: 120
+			diameter: 500,
+			nameWidth: 80
 		}
 
 		this.lineOptions = {
@@ -168,7 +168,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
 			if(mapValue === undefined) {
 				email.nr = 1;
 				mailMap.set(key, email);
-				this.maxNr = 1;
+				if(this.maxNr === 0) this.maxNr = 1;
 			}
 			else {
 				mapValue.nr += 1;
