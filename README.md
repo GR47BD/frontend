@@ -43,3 +43,6 @@ The files are structured in a way that it is easy to build upon. The following i
 |- package.json # The configuration for NPM
 |- README.md # This file
 ```
+
+## Features
+There is a button with which data can be selected. There is a node-link diagram that has nodes that can be clicked on to view the connected nodes. There is also a hierarchical edge bundling diagram which shows the people that have messages eachother, grouped by job title. Using the time bar below a certain time span can be selected.
