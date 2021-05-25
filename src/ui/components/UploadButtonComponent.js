@@ -9,11 +9,10 @@ export default class UploadButtonComponent {
         const realFileBtn = document.getElementById("real-file");
         const customBtn = document.getElementById("custom-button");
         const customTxt = document.getElementById("custom-text");
-        
+
         customBtn.addEventListener("click", function(){
             realFileBtn.click();
         });
-
         realFileBtn.addEventListener("change", () => {
             if(realFileBtn.value){
                 customTxt.innerHTML = realFileBtn.value.match(/[\/\\]([\w\d\s\.\-\(\)]+)$/)[1]; 
@@ -30,7 +29,7 @@ export default class UploadButtonComponent {
             }
         })
 	}
-    
+    /*
     doupload(){
         let data = realFileBtn;
         let entry = realFileBtn;
@@ -38,7 +37,7 @@ export default class UploadButtonComponent {
         fetch('uploads/' + encodeURIComponent(entry.name), {method:'PUT',body:data});
         location.reload();        
     }
-
+    */
     readFile(file) {
         const reader = new FileReader();
 
