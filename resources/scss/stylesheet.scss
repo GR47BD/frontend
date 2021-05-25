@@ -155,10 +155,23 @@ body {
 }
 
 .node:hover {
-	fill: white;
+	stroke-width: 2px;
+	stroke: rgb(49, 49, 49)
+}
+
+.node {
+	stroke-width: 1px;
+	stroke: rgb(49, 49, 49)
 }
 
 .visualizations {
 	display: flex;
 	flex-direction: row;
+}
+
+rect.selection {
+    stroke          : gray;
+    stroke-dasharray: 4px;
+    stroke-opacity  : 0.5;
+    fill            : transparent;
 }

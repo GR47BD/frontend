@@ -85,7 +85,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
                                         .on("drag", this.dragMove)
                                         .on("start", this.dragStart)
                                         .on("end", this.dragEnd);
-        this.svg.call(dragBehaviour);
+        // this.svg.call(dragBehaviour);
+
+        node_link_diagram.call( d3.brush()                     // Add the brush feature using the d3.brush function
+        .extent( [ [0,0], [this.dimensions.width,this.dimensions.height] ] )       // initialise the brush area: start at 0,0 and finishes at width,height: it means I select the whole graph area
+      )
             
         
         this.drawnEdges = this.svg.append('g').attr("class", "edge").selectAll('line');
@@ -103,6 +107,15 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         this.simulation.alphaTarget(this.simulationSettings.alphaTarget).alphaDecay(this.simulationSettings.alphaDecay);
         
+       let mouseBehaviour = this.svg.on('mousedown',function(event, d) {
+        // if(!d3.event.ctrlKey){
+
+        // }
+
+
+        let mouseInfo = d3.pointer(event);
+        console.log(mouseInfo);
+    });
         
 
         this.update(true);
@@ -133,6 +146,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 }
             });
         }
+
+        
 
         if(this.main.dataHandler.dataChanged){
             this.updateData(dataChangedAmount);
@@ -299,7 +314,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 return d.y 
             })
             .attr('fill', (node) => {
-                if(node.highlighted) return '#000000';
+                // if(node.highlighted) return '#000000';
                 const scale = d3.scaleOrdinal(d3.schemeCategory10);
                 scale.domain(this.jobtitles);
                 return scale(node.jobtitle);
