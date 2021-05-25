@@ -1,4 +1,15 @@
 @import '~nouislider/dist/nouislider.css';
+//@import './menu-bar';
+@import url('https://fonts.googleapis.com/css?family=Montserrat:500&display=swap');
+
+$menubar-height: 120px;
+$back-col: #d3d6db;
+$menu-back-col:#24252a;
+$text-col: black;
+$container-col: #393e46;
+$f-family: "Montserrat", sans-serif;
+$margin-container: 0px;
+$main-color:rgba(0, 136, 169, 0.8);
 
 body {
 	margin: 0;
@@ -12,30 +23,53 @@ body {
 .menubar {
 	display: flex;
 	position: fixed;
+	justify-content: space-between;
+	align-items: center;
 	flex-direction: row;
+	flex-wrap: wrap;
 	width: 100vw;
-	height: 50px;
-	background: lightblue;
+	height: $menubar-height;
+	background-color: $menu-back-col;
 
 	.logo {
+		order:1;
+		color:#fff;
+		text-transform: capitalize;
 		line-height: 50px;
-		margin-left: 20px;
-		font-size: 30px;
+		margin-left: 10px;
+		font-size: 3.0em;
+		max-width: 100%;
+		padding: 20px;
+		font-weight: 400;
+		font-family: $f-family;
 	}
 
 	.links {
+		order:2;
 		display: flex;
 		flex-direction: row;
 		margin: 5px 20px 5px auto;
+		max-width: 100%;
+		padding: 40px;
+		font-weight: 500;
+		list-style-type: none;
 
 		.link {
 			height: 40px;
 			line-height: 40px;
 			padding: 0px 15px;
 			cursor: pointer;
+			font-family: $f-family;
+			font-weight: 500;
+			font-size: 1.5em;
+			color: #edf0f1;
+			text-decoration: none;	
+			transition: all 0.3s ease 0s;
 
 			&:hover {
-				text-decoration: underline;
+				color: $main-color;
+				cursor: pointer;
+				transition: all 0.3s ease 0s;
 			}
 		}
 	}
@@ -44,28 +78,43 @@ body {
 .visualize-container {
 	display: flex;
 	flex-direction: row;
-	margin-top: 50px;
+	margin-top: $menubar-height + 3px;
+	margin-left: $margin-container;
+	margin-right: $margin-container;
+	margin-bottom: $margin-container;
+	background: $back-col;	
+	font-family: $f-family;
 }
-
 .drawer-container {
 	display: flex;
 	flex-direction: column;
 	margin: 20px 20px 20px 0;
 	height: calc(100vh - 90px);
 	width: 250px;
+	margin-top: 10px;
+	color: white;
+	padding: 10px;
+	align-items: center;
+	justify-content: center;
 
 	&.right {
 		margin: 20px 0 20px 20px;
 	}
 
 	.drawer {
-		background: lightcoral;
+		background: $container-col;
+		box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.16);
+		font-family: $f-family;
 		flex-grow: 1;
 		width: 100%;
+		//padding: 10px;
+
 		margin-bottom: 10px;
+		border: none;
+		border-radius: 10px;
 
 		&:last-child {
-			margin-bottom: 0;
+			margin-bottom: $margin-container;
 		}
 	}
 }
@@ -75,14 +124,18 @@ body {
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
+	font-family: $f-family;
 }
 
 .visualization-panel {
+	font-family: $f-family;
 	width: 100%;
 
 	&.half {
 		width: 50%;
+
 	}
+		
 }
 
 .timebar {
@@ -91,7 +144,7 @@ body {
 	width: 100%;
 	height: 120px;
 	align-items: center;
-	background: lightcoral;
+	background: $back-col;
 
 	.dates {
 		padding: 16px 32px;
@@ -112,11 +165,11 @@ body {
 	pointer-events: none;
 
 	&.highlightedOut {
-		stroke: red;
+		stroke: orangered;
 		z-index: 100;
 	}
 	&.highlightedIn {
-		stroke: green;
+		stroke: #1eb64c;
 		z-index: 100;
 	}
 	&.white {
@@ -126,33 +179,37 @@ body {
 }
 
 .hier-node {
-	font-family: 'Helvetica';
+	font-family: $f-family;
 	transition: font-weight .3s;
 
 	&.selected {
 		fill: black;
 		font-weight: bolder;
+		text-decoration: underline;
+		cursor: pointer;
 	}
 
 	&.target {
-		fill: red;
+		fill: rgb(211, 123, 123);
 		font-weight: bolder;
 	}
 
 	&.source {
-		fill: green;
+		fill: rgb(9, 37, 9);
 		font-weight: bolder;
 	}
 
 	&.both {
-		fill: blue;
+		fill: rgba(65, 3, 54, 0.835);
 		font-weight: bolder;
+	}
+
+	.hier-node:hover {
+		font-weight: bolder;
+		cursor: pointer;
 	}
 }
 
-.hier-node:hover {
-	font-weight: bolder;
-}
 
 .node:hover {
 	stroke-width: 2px;
@@ -174,4 +231,23 @@ rect.selection {
     stroke-dasharray: 4px;
     stroke-opacity  : 0.5;
     fill            : transparent;
+}
+#custom-button {
+	padding: 10px;
+	font-family: $f-family;
+	color: white;
+	background-color: $main-color;
+	border: 1px solid #000;
+	border-radius: 5px;
+	cursor: pointer;
+  }
+  
+#custom-button:hover {
+	background-color: #2e9ab8;
+}
+  
+#custom-text {
+	margin-left: 10px;
+	font-family: $f-family;
+	color: #aaa;
 }
