@@ -14,7 +14,7 @@ export default class VisualizeView {
                 <MenuBarComponent></MenuBarComponent>
 				<div class="visualize-container">
 					<DrawerContainerComponent>
-						<DrawerComponent></DrawerComponent>
+						<DrawerComponent>Statistics</DrawerComponent>
 					</DrawerContainerComponent>
 					
 					<VisualizationContainerComponent main={main}></VisualizationContainerComponent>
@@ -23,7 +23,7 @@ export default class VisualizeView {
 						<DrawerComponent>
 							<UploadButtonComponent main={main}></UploadButtonComponent>
 						</DrawerComponent>
-						<DrawerComponent></DrawerComponent>
+						<DrawerComponent>Options</DrawerComponent>
 					</DrawerContainerComponent>
 				</div>
             </div>

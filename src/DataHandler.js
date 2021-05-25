@@ -225,20 +225,23 @@ export default class DataHandler {
      * @param {array} raw  The raw data array
      */
     formatData(raw, origin){
-        return raw.map(item => {
-            return {
-                date: new Date(item.date),
-                fromId: parseInt(item.fromId),
-                fromEmail: item.fromEmail,
-                fromJobtitle: item.fromJobtitle,
-                toId: parseInt(item.toId),
-                toEmail: item.toEmail,
-                toJobtitle: item.toJobtitle,
-                messageType: item.messageType,
-                sentiment: parseFloat(item.sentiment),
-                origin
+        return raw.reduce((result, item) => {
+            if(item.fromId != item.toId){
+                result.push({
+                    date: new Date(item.date),
+                    fromId: parseInt(item.fromId),
+                    fromEmail: item.fromEmail,
+                    fromJobtitle: item.fromJobtitle,
+                    toId: parseInt(item.toId),
+                    toEmail: item.toEmail,
+                    toJobtitle: item.toJobtitle,
+                    messageType: item.messageType,
+                    sentiment: parseFloat(item.sentiment),
+                    origin
+                });
             }
-        });   
+            return result
+        }, []);   
     }
 
     /**

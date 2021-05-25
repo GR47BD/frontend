@@ -98,6 +98,15 @@ export default class TimebarComponent {
 	 */
 	togglePlayPause() {
 		this.main.visualizer.animator.toggle();
+
+		const timebarPlayButton = document.getElementById("timebar-play");
+
+		if(timebarPlayButton.innerText === "Play") {
+			timebarPlayButton.innerText = "Pause";
+		}
+		else {
+			timebarPlayButton.innerText = "Play";
+		}
 	}
 
 	/**
@@ -124,7 +133,7 @@ export default class TimebarComponent {
 					<div id="timebar-slider"></div>
 				</div>
 				<div class="buttons">
-					<div class="button" id="timebar-play" onclick={() => this.togglePlayPause()}>Play/Pause</div>
+					<div class="button" id="timebar-play" onclick={() => this.togglePlayPause()}>Play</div>
 					<div class="button" id="timebar-stop" onclick={() => this.stop()}>Stop</div>
 				</div>
 			</div>
