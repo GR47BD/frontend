@@ -43,6 +43,8 @@ export default class DataHandler {
          */
         this.persons = {}
 
+        this.selectedPersons = new Map();
+
         // Ratio between 0 and 1 in how much the data has changed since last updateTimed
         this.dataChangedAmount = undefined;
 
@@ -411,5 +413,32 @@ export default class DataHandler {
              }
          });
          return res.join(' ');
+    }
+
+    /**
+     * @param {string, string, string} person This should be an object with the id of the person, the jobtitle and the name of the person
+     */
+    addSelectedPerson(person){
+        this.selectedPersons.set(person.id, person);
+    }
+
+    /**
+     * @param {string, string, string} person This should be an object with the id of the person, the jobtitle and the name of the person
+     */
+    removeSelectedPerson(person){
+        this.selectedPersons.delete(person.id);
+    }
+    /**
+     * This function clears the selected persons hashmap
+     */
+    clearSelectedPersons(){
+        this.selectedPersons = new Map();
+    }
+    /**
+     * @param {string, string, string} person This should be an object with the id of the person, the jobtitle and the name of the person
+     * @returns if the person is in the selected persons hashmap
+     */
+    personIsSelected(person){
+        return this.selectedPersons.has(person.id);
     }
 }

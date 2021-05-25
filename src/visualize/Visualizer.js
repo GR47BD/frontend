@@ -49,25 +49,40 @@ export default class Visualizer {
         }
     }
 
-    mouseOverNode(id){
+     /**
+      * Calls mouseOverNode in every visualization
+      * @param {string, string, string} person This should be an object with the id of the person, the jobtitle and the name of the person
+      */
+    mouseOverNode(person){
         for(const visualization of this.visualizations.values()){
-            visualization.mouseOverNode(id);
+            visualization.mouseOverNode(person);
         }
     }
-    mouseOutNode(id){
+    /**
+     * Calls mouseOutNode in every visualization
+     * @param {string, string, string} person This should be an object with the id of the person, the jobtitle and the name of the person
+     */
+    mouseOutNode(person){
         for(const visualization of this.visualizations.values()){
-            visualization.mouseOutNode(id);
+            visualization.mouseOutNode(person);
         }
     }
-
-    mouseDownNode(id){
+    /**
+     * Calls mouseDownNode in every visualization
+     * @param {string, string, string} person This should be an object with the id of the person, the jobtitle and the name of the person
+     */
+    mouseDownNode(person){
         for(const visualization of this.visualizations.values()){
-            visualization.mouseDownNode(id);
+            visualization.mouseDownNode(person);
         }
     }
-    mouseUpNode(id){
+    /**
+     * Calls mouseUpNode in every visualization
+     * @param {string, string, string} person This should be an object with the id of the person, the jobtitle and the name of the person
+     */
+    mouseUpNode(person){
         for(const visualization of this.visualizations.values()){
-            visualization.mouseUpNode(id);
+            visualization.mouseUpNode(person);
         }
     }
 }

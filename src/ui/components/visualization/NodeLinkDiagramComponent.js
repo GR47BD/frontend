@@ -9,8 +9,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
     constructor(){
         super();
         this.dimensions = {
-            width: 450,
-            height: 450
+            width: 600,
+            height: 600
         }
 
         this.centerForce = {
@@ -87,13 +87,23 @@ export default class NodeLinkDiagramComponent extends Visualization {
                                         .on("end", this.dragEnd);
         // this.svg.call(dragBehaviour);
 
-        node_link_diagram.call( d3.brush()                     // Add the brush feature using the d3.brush function
-        .extent( [ [0,0], [this.dimensions.width,this.dimensions.height] ] )       // initialise the brush area: start at 0,0 and finishes at width,height: it means I select the whole graph area
-      )
-            
+     
+        const brush = d3.brush().on('brush', (selection) => {
+            this.brushed(selection)
+        })
+        .filter((event) => {
+            return event.ctrlKey;
+        });
+
+        this.scale = d3.scaleOrdinal(d3.schemeCategory10);
+        this.scale.domain(this.jobtitles);        
+
+        this.svg.append('g').attr("class", "brush end").call(brush);
+
         
         this.drawnEdges = this.svg.append('g').attr("class", "edge").selectAll('line');
         this.drawnNodes = this.svg.append('g').attr("class", "node").selectAll('circle');
+
 
         this.simulation = d3.forceSimulation()
             .force('link', d3.forceLink().id(function (d) {
@@ -113,12 +123,17 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // }
 
 
-        let mouseInfo = d3.pointer(event);
-        console.log(mouseInfo);
-    });
+        // let mouseInfo = d3.pointer(event);
+        // console.log(mouseInfo);
+        }); 
         
 
         this.update(true);
+    }
+
+    brushed({selection}){
+        // this.main.dataHandler.clearSelectedPersons();
+        if(selection) this.searchNodesInRectangle(selection);
     }
 
     step(firstRun = false) {
@@ -290,7 +305,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .attr('stroke', edge => {
                 const alpha = (this.edgeOptions.amountBonus * edge.nr / this.maxNr + this.edgeOptions.basis).toFixed(2);
                 if(edge.highlighted){
-                    return `rgba(200,100,0,${alpha})`;
+                    return `rgba(255,100,0,${alpha})`;
                 }
                 return `rgba(0,0,0,${alpha})`;
             })
@@ -314,24 +329,24 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 return d.y 
             })
             .attr('fill', (node) => {
-                // if(node.highlighted) return '#000000';
-                const scale = d3.scaleOrdinal(d3.schemeCategory10);
-                scale.domain(this.jobtitles);
-                return scale(node.jobtitle);
+                if(this.main.dataHandler.personIsSelected(super.nodeToPersonObject(node))){
+                    return '#000000';
+                }                
+
+                return this.scale(node.jobtitle);
             })
             
-            .on("mouseover", (d, i) => {
-                this.main.visualizer.mouseOverNode(i.id);
+            // .on("mouseover", (d, i) => {
+            //     this.main.visualizer.mouseOverNode(i.id);
+            // })
+            // .on('mouseout', (d, i) => {
+            //     this.main.visualizer.mouseOutNode(i.id);
+            // })
+            .on('mouseup', (event, node) => {
+                this.main.visualizer.mouseUpNode(super.nodeToPersonObject(node));
             })
-            .on('mouseout', (d, i) => {
-                this.main.visualizer.mouseOutNode(i.id);
-            })
-            .on('mouseup', (d, i) => {
-
-                return this.main.visualizer.mouseUpNode(i.id)
-            })
-            .on('mousedown', (d, i) => {
-                return this.main.visualizer.mouseDownNode(i.id)
+            .on('mousedown', (event, node) => {
+                this.main.visualizer.mouseDownNode(super.nodeToPersonObject(node));
             })
             .attr('class', 'node');
 
@@ -339,20 +354,20 @@ export default class NodeLinkDiagramComponent extends Visualization {
         else this.drawnNodes.attr('transform', `translate(0,0)`)
     }
 
-    mouseOverNode(id){
-        //Get the location of the selected person in the nodes array
-        let nodeIndex = this.personsIndex.get(id);
-        //Set highlighted to true
-        this.nodes[nodeIndex].highlighted = true;
+    mouseOverNode(person){
+        // //Get the location of the selected person in the nodes array
+        // let nodeIndex = this.personsIndex.get(id);
+        // //Set highlighted to true
+        // this.nodes[nodeIndex].highlighted = true;
 
         super.mouseOverNode();
     }
 
-    mouseOutNode(id){
+    mouseOutNode(person){
         //Get the location of the selected person in the nodes array
-        let nodeIndex = this.personsIndex.get(id);
-        //Set highlighted to false
-        this.nodes[nodeIndex].highlighted = false;
+        // let nodeIndex = this.personsIndex.get(id);
+        // //Set highlighted to false
+        // this.nodes[nodeIndex].highlighted = false;
         
         for(let i = 0; i < this.edgesToHighlight.length; i++){
             let edge = this.mailMap.get(this.edgesToHighlight[i]);
@@ -364,24 +379,31 @@ export default class NodeLinkDiagramComponent extends Visualization {
         super.mouseOutNode();
     }
 
-    mouseDownNode(id){
+    mouseDownNode(person){
         // get all connected edges
         // getEmailsForPerson might not be very efficient 
 
-        let nodeIndex = this.personsIndex.get(id);
+        // let nodeIndex = this.personsIndex.get(id);
         //Set highlighted to false
-        console.log(this.nodes[nodeIndex]);
+        // console.log(this.nodes[nodeIndex]);
+        if(!this.main.dataHandler.personIsSelected(person)){
+            this.main.dataHandler.addSelectedPerson(person);
+            let adjacentEmails = this.main.dataHandler.getEmailsForPerson(person.id);
 
-        let adjacentEmails = this.main.dataHandler.getEmailsForPerson(id);
+            for(let i = 0; i < adjacentEmails.length; i++){
+                this.edgesToHighlight.push(adjacentEmails[i].fromId + '.' + adjacentEmails[i].toId);       
+            }
+        } 
+        else {
+            this.main.dataHandler.removeSelectedPerson(person) 
+        }     
 
-        for(let i = 0; i < adjacentEmails.length; i++){
-            this.edgesToHighlight.push(adjacentEmails[i].fromId + '.' + adjacentEmails[i].toId);       
-        }
         super.mouseDownNode();
     }
 
-    mouseUpNode(id){
+    mouseUpNode(person){
         // For now just emptying the array works just fine, however in the future this might not be the best  idea
+
         for(let i = 0; i < this.edgesToHighlight.length; i++){
             let edge = this.mailMap.get(this.edgesToHighlight[i]);
             edge.highlighted = false;
@@ -391,19 +413,20 @@ export default class NodeLinkDiagramComponent extends Visualization {
         super.mouseUpNode();
     }
 
-    dragStart(){
-        console.log('Drag start')
-    }
-
-    dragMove(){
-        console.log('Drag move')
-    }
-
-    dragEnd(){
-        console.log('Drag end')
-    }
-    
-
+    // Finds node within x and y coordinates
+    searchNodesInRectangle([[x0, y0], [x1, y1]]){
+        for (let i = 0; i < this.nodes.length; i++){
+            const node = this.nodes[i];
+            if (node.x <= x1 && node.y <= y1 && node.x >= x0 && node.y >= y0){
+                if(this.main.dataHandler.personIsSelected(node)) continue;
+                this.main.dataHandler.addSelectedPerson(super.nodeToPersonObject(node));
+            }
+            else {
+                if(!this.main.dataHandler.personIsSelected(node)) continue;
+                this.main.dataHandler.removeSelectedPerson(super.nodeToPersonObject(node));
+            }
+        }
+     }
 
     view() {
         return (
