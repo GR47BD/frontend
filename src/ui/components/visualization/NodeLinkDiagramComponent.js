@@ -1,7 +1,7 @@
 import m from "mithril";
 import * as d3 from "d3";
 import Visualization from "@/visualize/Visualization";
-import { forceLink } from "d3";
+import { forceLink, selection } from "d3";
 
 
 export default class NodeLinkDiagramComponent extends Visualization {
@@ -47,7 +47,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
         }
 
         this.nodeOptions = {
-            radius: 5
+            minRadius: 5,
+            maxRadius: 30
         }
 
         this.simulationSettings = {
@@ -56,8 +57,17 @@ export default class NodeLinkDiagramComponent extends Visualization {
             alphaDecay: 0.05            
         }
 
+        this.maxNodes = 0;
+
         this.edgesToHighlight = []
+
+        this.usingBrushTool = false;
+
+        this.groupOnJobtitle = false;
+
+        this.clickedNodes = new Map();
     }
+
     oninit(vnode) {
         super.oninit(vnode);
 
@@ -80,17 +90,9 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .attr("shape-rendering", "optimizeSpeed")
 			.attr("image-rendering", "optimizeSpeed");
 
-
-        let dragBehaviour = d3.drag()
-                                        .on("drag", this.dragMove)
-                                        .on("start", this.dragStart)
-                                        .on("end", this.dragEnd);
-        // this.svg.call(dragBehaviour);
-
      
-        const brush = d3.brush().on('brush', (selection) => {
-            this.brushed(selection)
-        })
+        const brush = d3.brush().on('start', (selection) => this.brushed(selection))
+        .on('brush', (selection) => this.brushed(selection))
         .filter((event) => {
             return event.ctrlKey;
         });
@@ -98,16 +100,25 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.scale = d3.scaleOrdinal(d3.schemeCategory10);
         this.scale.domain(this.jobtitles);        
 
-        this.svg.append('g').attr("class", "brush end").call(brush);
+        this.svg.append('g').attr("class", "brush end").call(brush).attr("class");   
 
-        
         this.drawnEdges = this.svg.append('g').attr("class", "edge").selectAll('line');
-        this.drawnNodes = this.svg.append('g').attr("class", "node").selectAll('circle');
+        this.drawnNodes = this.svg.append('g').attr("class", "node").selectAll('circle').on('mousedown', (event) => {
+            if(!event.ctrlKey){
+
+                    console.log(event)
+                    this.main.dataHandler.clearSelectedPersons();
+                    for(let node in this.clickedNodes){
+                        this.main.dataHandler.addSelectedPerson(super.nodeToPersonObject(node));
+                    }
+                }
+        }); 
+
 
 
         this.simulation = d3.forceSimulation()
-            .force('link', d3.forceLink().id(function (d) {
-                return d.id
+            .force('link', d3.forceLink().id(function (node) {
+                return node.id
             }))
             .force("center", d3.forceCenter(this.centerForce.x, this.centerForce.y).strength(this.centerForce.strength))
             .force('collide', d3.forceCollide(d => this.collideForce.radius)
@@ -117,23 +128,28 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         this.simulation.alphaTarget(this.simulationSettings.alphaTarget).alphaDecay(this.simulationSettings.alphaDecay);
         
-       let mouseBehaviour = this.svg.on('mousedown',function(event, d) {
-        // if(!d3.event.ctrlKey){
+    //    this.svg.on('mousedown', (event) => {
+    //         if(!event.ctrlKey){
 
-        // }
+    //                 console.log(event)
+    //                 this.main.dataHandler.clearSelectedPersons();
+    //                 for(let node in this.clickedNodes){
+    //                     this.main.dataHandler.addSelectedPerson(super.nodeToPersonObject(node));
+    //                 }
+    //             }
+    //     }); 
 
-
-        // let mouseInfo = d3.pointer(event);
-        // console.log(mouseInfo);
-        }); 
         
 
         this.update(true);
     }
 
     brushed({selection}){
-        // this.main.dataHandler.clearSelectedPersons();
+        this.usingBrushTool = true
         if(selection) this.searchNodesInRectangle(selection);
+        else {
+            console.log("selection empty")
+        }
     }
 
     step(firstRun = false) {
@@ -191,14 +207,23 @@ export default class NodeLinkDiagramComponent extends Visualization {
         const linkStrength = this.linkForce.basis - (this.edges.length / this.linkForce.divider) * this.linkForce.penalty;
         const centerStrength = this.centerForce.basis - (this.edges.length / this.centerForce.divider) * this.centerForce.penalty;
 
-        let weightScale = d3.scaleLinear().domain(d3.extent(this.edges, (edge) => this.maxNr - edge.nr)).range([.1, 2])
-        
-
         this.simulation.force('link').links(this.edges);
-        // Change the strength of a link relative to the number of emails in that link
-        this.simulation.force('link')
+
+        if(this.groupOnJobtitle) {
+
+        } 
+        else {
+            let weightScale = d3.scaleLinear().domain(d3.extent(this.edges, (edge) => this.maxNr - edge.nr)).range([.1, 2])
+            this.simulation.force('link')
             // .strength(link => (link.nr/this.maxNr)*this.linkForce.amountBonus + linkStrength);
             .strength(edge => weightScale(edge.nr));
+
+
+        }
+        
+
+        // Change the strength of a link relative to the number of emails in that link
+
         
         this.simulation.force('center').strength(centerStrength);
                 
@@ -213,42 +238,98 @@ export default class NodeLinkDiagramComponent extends Visualization {
         }        
 
         this.simulation.on('tick', () => {
-
-            this.updateEdges(this.main.dataHandler.dataChanged);
-            this.updateNodes(this.main.dataHandler.dataChanged);
+            this.updateDrawnNodes(this.main.dataHandler.dataChanged);
+            this.updateDrawnEdges(this.main.dataHandler.dataChanged);
         });
 
         super.update();
+    }
+
+    createNodesGroup(jobtitle){
+        let groupedNodes = [];
+        let newNodes = [];
+        for(let i = 0; i < this.nodes.length; i++){
+            if(this.nodes[i].jobtitle == jobtitle) groupedNodes.push(this.nodes[i]);
+            else newNodes.push(this.nodes[i]);
+            
+        }   
+        this.nodes = [...newNodes, {id: jobtitle, jobtitle: jobtitle, nodes: [...groupedNodes]}]
+        this.maxNodes = this.maxNodes > newNodes.length ? this.maxNodes : newNodes.length;
+        console.log('nodes', this.nodes);
+    }
+
+    createEdgesGroup(jobtitle){
+        let edgesMap = new Map();
+        console.log(jobtitle)
+        
+        for(const edge of this.edges){
+            if(edge.jobtitles.source === jobtitle && edge.jobtitles.target === jobtitle) continue;
+            
+            if(edge.jobtitles.source === jobtitle || edge.source === jobtitle){
+                const key = jobtitle + '.' + edge.target;
+
+                const mapValue = edgesMap.get(key);
+                if(mapValue === undefined){
+                    edge.source = jobtitle
+                    edgesMap.set(key, edge)
+                } 
+                else{
+                    mapValue.nr += 1;
+                    this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;                    
+                }
+            }
+            else if(edge.jobtitles.target === jobtitle || edge.target === jobtitle){
+                const key = edge.source + "." + jobtitle
+                const mapValue = edgesMap.get(key);
+                if(mapValue === undefined){
+                    edge.target = jobtitle
+                    edgesMap.set(key, edge)
+                } 
+                else{
+                    mapValue.nr += 1;
+                    this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;
+                }
+            }
+            else edgesMap.set(edge.source + "." + edge.target, edge)
+        }
+        this.edges = Array.from(edgesMap.values());
+        console.log(this.edges)
     }
 
     compareLists(list1, list2, isUnion = false){
         return list1.filter((set => a => isUnion === set.has(a.id))(new Set(list2.map(b => b.id))));
     }
 
-    updateData(dataChangedAmount){
-        const persons = this.main.dataHandler.getPersons();
+    updateNodes(fromDatahandler){
 
-        this.nodes = this.compareLists(this.nodes, persons, true);
-        let newNodes = this.compareLists(persons, this.nodes);
+        if(fromDatahandler){
+            const persons = this.main.dataHandler.getPersons();
 
-        newNodes = newNodes.map(node => {
-            return {
-                id: node.id,
-                jobtitle: node.jobtitle,
-                name: persons.find(person => person.email === node.email),
-                highlighted: false,
-                x: this.dimensions.width / 2,
-                y: this.dimensions.height / 2
+            this.nodes = this.compareLists(this.nodes, persons, true);
+            let newNodes = this.compareLists(persons, this.nodes);
+    
+            newNodes = newNodes.map(node => {
+                return {
+                    id: node.id,
+                    jobtitle: node.jobtitle,
+                    name: persons.find(person => person.email === node.email),
+                    highlighted: false,
+                    x: this.dimensions.width / 2,
+                    y: this.dimensions.height / 2
+                }
+            })
+    
+            this.nodes.push(...newNodes);            
+    
+            this.personsIndex = new Map();
+            for(let i = 0; i < this.nodes.length; i++){
+                this.personsIndex.set(this.nodes[i].id, i);
             }
-        })
-
-        this.nodes.push(...newNodes);            
-
-        this.personsIndex = new Map();
-        for(let i = 0; i < this.nodes.length; i++){
-            this.personsIndex.set(this.nodes[i].id, i);
         }
 
+    }
+
+    updateEdges(){
         // emails of current timeframe
         let emails = this.main.dataHandler.getEmails();
 
@@ -256,6 +337,10 @@ export default class NodeLinkDiagramComponent extends Visualization {
             return {
                 source: email.fromId,
                 target: email.toId,
+                jobtitles: {
+                    source: email.fromJobtitle,
+                    target: email.toJobtitle,
+                },
                 sentiment: email.sentiment,     
                 date: email.date,
                 nr: 1,
@@ -282,12 +367,28 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
 
         this.edges = Array.from(this.mailMap.values());
+        console.log(this.edges)
+
+    }
+
+
+
+    updateData(dataChangedAmount){
+        this.updateNodes(true);
+        this.updateEdges();  
+
+        if(this.groupOnJobtitle){
+            this.createNodesGroup("Employee");
+            this.createEdgesGroup("Employee");
+            this.createNodesGroup("Manager");
+            this.createEdgesGroup("Manager");
+        }
 
         let newAlpha = (dataChangedAmount * (0.5 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget;
         this.simulation.alpha(newAlpha);
     }
 
-    updateEdges(firstRun) {
+    updateDrawnEdges(firstRun) {
         this.drawnEdges = this.svg.select('.edge').selectAll('line');
 
         this.drawnEdges.attr('x1', (edge) => {
@@ -319,9 +420,14 @@ export default class NodeLinkDiagramComponent extends Visualization {
         else this.drawnEdges.attr('transform', `translate(0,0)`)
     }
 
-    updateNodes(firstRun) {
+    updateDrawnNodes(firstRun) {
         this.drawnNodes = this.svg.select('.node').selectAll('circle');
-        this.drawnNodes.attr('r', this.nodeOptions.radius)
+        this.drawnNodes.attr('r', (node) => {
+            if(node.nodes === undefined) return this.nodeOptions.minRadius;
+            const normalized = (node.nodes.length - 1) / (this.maxNodes - 1)
+            return normalized * (this.nodeOptions.maxRadius - this.nodeOptions.minRadius) + this.nodeOptions.minRadius;
+
+        })
             .attr('cx', (d) => {
                 return d.x 
             })
@@ -346,9 +452,15 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 this.main.visualizer.mouseUpNode(super.nodeToPersonObject(node));
             })
             .on('mousedown', (event, node) => {
+                console.log(node);
                 this.main.visualizer.mouseDownNode(super.nodeToPersonObject(node));
             })
-            .attr('class', 'node');
+            .attr('class', 'node')
+            .attr('stroke-width', (node) => {
+                if(node.nodes === undefined) return 1;
+
+                return node.nodes.length
+            });
 
         if(firstRun) this.drawnNodes.attr('transform', `translate(${(this.dimensions.width) / 2},${(this.dimensions.height) / 2})`)
         else this.drawnNodes.attr('transform', `translate(0,0)`)
@@ -388,6 +500,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // console.log(this.nodes[nodeIndex]);
         if(!this.main.dataHandler.personIsSelected(person)){
             this.main.dataHandler.addSelectedPerson(person);
+            this.clickedNodes.set(person.id, person);
             let adjacentEmails = this.main.dataHandler.getEmailsForPerson(person.id);
 
             for(let i = 0; i < adjacentEmails.length; i++){
@@ -395,7 +508,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
             }
         } 
         else {
-            this.main.dataHandler.removeSelectedPerson(person) 
+            this.main.dataHandler.removeSelectedPerson(person);
+            this.clickedNodes.delete(person.id) 
         }     
 
         super.mouseDownNode();
@@ -418,15 +532,21 @@ export default class NodeLinkDiagramComponent extends Visualization {
         for (let i = 0; i < this.nodes.length; i++){
             const node = this.nodes[i];
             if (node.x <= x1 && node.y <= y1 && node.x >= x0 && node.y >= y0){
-                if(this.main.dataHandler.personIsSelected(node)) continue;
+                if(this.main.dataHandler.personIsSelected(super.nodeToPersonObject(node))) continue;
                 this.main.dataHandler.addSelectedPerson(super.nodeToPersonObject(node));
             }
             else {
-                if(!this.main.dataHandler.personIsSelected(node)) continue;
+                if(!this.main.dataHandler.personIsSelected(super.nodeToPersonObject(node)) || this.clickedNodes.has(node.id)) continue;
                 this.main.dataHandler.removeSelectedPerson(super.nodeToPersonObject(node));
             }
         }
      }
+
+    addClickedNodes(){
+        for(let node in this.clickedNodes){
+            this.main.dataHandler.addSelectedPerson(super.nodeToPersonObject(node));
+        }
+    }
 
     view() {
         return (
