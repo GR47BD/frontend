@@ -441,4 +441,24 @@ export default class DataHandler {
     personIsSelected(person){
         return this.selectedPersons.has(person.id);
     }
+
+    /**
+     * 
+     * @returns a map with jobtitle: count, summed up for each node in the current selection
+     */
+    getJobtitleCountOfSelection(){
+        let jobtitleCount =  new Map();                  
+
+        for(const person of this.selectedPersons){
+            // console.log(person);
+            const key = person[1].jobtitle;
+            const value = jobtitleCount.get(key);
+            if(value === undefined){
+                jobtitleCount.set(key, 1);
+            }else{
+                jobtitleCount.set(key, value+1);
+            }
+        }
+        return jobtitleCount;
+    }
 }
