@@ -1,7 +1,6 @@
 import m from "mithril";
 import * as d3 from "d3";
 import Visualization from "@/visualize/Visualization";
-import { forceLink, selection } from "d3";
 
 
 export default class NodeLinkDiagramComponent extends Visualization {
@@ -60,18 +59,19 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.maxNodes = 0;
 
         this.edgesToHighlight = []
+        this.jobtitles = [];
 
         this.usingBrushTool = false;
 
         this.groupOnJobtitle = false;
 
         this.clickedNodes = new Map();
+
+        this.groupedJobtitles = new Set();
     }
 
     oninit(vnode) {
-        super.oninit(vnode);
-
-        
+        super.oninit(vnode);       
     }
 
     oncreate() {
@@ -81,8 +81,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
 		if(this.main.dataHandler.data.length === 0) return;
 
-        this.jobtitles = this.main.dataHandler.getJobTitles();
-
         let node_link_diagram = d3.select('#node_link_diagram');
         this.svg = node_link_diagram.append('svg')
             .attr('width', this.dimensions.width)
@@ -90,6 +88,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .attr("shape-rendering", "optimizeSpeed")
 			.attr("image-rendering", "optimizeSpeed");
 
+        this.jobtitles = this.main.dataHandler.getJobTitles()
      
         const brush = d3.brush().on('start', (selection) => this.brushed(selection))
         .on('brush', (selection) => this.brushed(selection))
@@ -127,18 +126,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 .tick(this.forces.ticks);
 
         this.simulation.alphaTarget(this.simulationSettings.alphaTarget).alphaDecay(this.simulationSettings.alphaDecay);
-        
-    //    this.svg.on('mousedown', (event) => {
-    //         if(!event.ctrlKey){
-
-    //                 console.log(event)
-    //                 this.main.dataHandler.clearSelectedPersons();
-    //                 for(let node in this.clickedNodes){
-    //                     this.main.dataHandler.addSelectedPerson(super.nodeToPersonObject(node));
-    //                 }
-    //             }
-    //     }); 
-
         
 
         this.update(true);
@@ -209,17 +196,12 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         this.simulation.force('link').links(this.edges);
 
-        if(this.groupOnJobtitle) {
 
-        } 
-        else {
-            let weightScale = d3.scaleLinear().domain(d3.extent(this.edges, (edge) => this.maxNr - edge.nr)).range([.1, 2])
-            this.simulation.force('link')
-            // .strength(link => (link.nr/this.maxNr)*this.linkForce.amountBonus + linkStrength);
-            .strength(edge => weightScale(edge.nr));
+        let weightScale = d3.scaleLinear().domain(d3.extent(this.edges, (edge) => this.maxNr - edge.nr)).range([.1, 2])
+        this.simulation.force('link')
+        // .strength(link => (link.nr/this.maxNr)*this.linkForce.amountBonus + linkStrength);
+        .strength(edge => weightScale(edge.nr));
 
-
-        }
         
 
         // Change the strength of a link relative to the number of emails in that link
@@ -246,17 +228,49 @@ export default class NodeLinkDiagramComponent extends Visualization {
         super.update();
     }
 
-    createNodesGroup(jobtitle){
-        let groupedNodes = [];
-        let newNodes = [];
-        for(let i = 0; i < this.nodes.length; i++){
-            if(this.nodes[i].jobtitle == jobtitle) groupedNodes.push(this.nodes[i]);
-            else newNodes.push(this.nodes[i]);
-            
+    createNodesGroup(){
+        let groupedNodes = new Map();
+        this.maxNodes = 0;
+
+        for(let node of this.nodes){
+            if(this.groupedJobtitles.has(node.jobtitle)){
+                this.addNodeToGroup(node, groupedNodes);
+            } 
+            else {
+                this.removeNodeFromGroup(node, groupedNodes);
+            }            
         }   
-        this.nodes = [...newNodes, {id: jobtitle, jobtitle: jobtitle, nodes: [...groupedNodes]}]
-        this.maxNodes = this.maxNodes > newNodes.length ? this.maxNodes : newNodes.length;
-        console.log('nodes', this.nodes);
+
+        this.nodes = Array.from(groupedNodes.values())
+        console.log('this.nodes', this.nodes);
+
+    }
+
+    addNodeToGroup(node, groupedNodes){
+        const group = groupedNodes.get(node.jobtitle);
+        if(group === undefined && node.nodes === undefined){
+            groupedNodes.set(node.jobtitle, {jobtitle: node.jobtitle, nodes: new Array(node)})
+            this.maxNodes = 1;
+        }  
+        else if(group === undefined){
+            groupedNodes.set(node.jobtitle, {jobtitle: node.jobtitle, nodes: node.nodes})
+            this.maxNodes = this.maxNodes > node.nodes.length ? this.maxNodes : node.nodes.length;
+        }
+        else if(node.nodes === undefined) {
+                group.nodes.push(node)
+                this.maxNodes = this.maxNodes > group.nodes.length ? this.maxNodes : group.nodes.length;
+        }
+    }
+
+    removeNodeFromGroup(node, groupedNodes){
+        if(node.nodes === undefined){
+            groupedNodes.set(node.id, node);
+        }
+        else {
+            for(let groupNode of node.nodes){
+                groupedNodes.set(groupNode.id, groupNode);
+            }
+        }
     }
 
     createEdgesGroup(jobtitle){
@@ -368,8 +382,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
 
         this.edges = Array.from(this.mailMap.values());
-        console.log(this.edges)
-
     }
 
 
@@ -379,10 +391,9 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.updateEdges();  
 
         if(this.groupOnJobtitle){
-            this.createNodesGroup("Employee");
-            this.createEdgesGroup("Employee");
-            this.createNodesGroup("Manager");
-            this.createEdgesGroup("Manager");
+            this.groupedJobtitles = new Set(this.jobtitles);
+            this.createNodesGroup();
+            this.createEdgesGroup();
         }
 
         let newAlpha = (dataChangedAmount * (0.5 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget;
@@ -425,7 +436,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.drawnNodes = this.svg.select('.node').selectAll('circle');
         this.drawnNodes.attr('r', (node) => {
             if(node.nodes === undefined) return this.nodeOptions.minRadius;
-            const normalized = (node.nodes.length - 1) / (this.maxNodes - 1)
+            const normalized = (node.nodes.length) / (this.maxNodes)
             return normalized * (this.nodeOptions.maxRadius - this.nodeOptions.minRadius) + this.nodeOptions.minRadius;
 
         })
@@ -439,6 +450,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 if(this.main.dataHandler.personIsSelected(super.nodeToPersonObject(node))){
                     return '#000000';
                 }                
+                else if(node.nodes != undefined){
+                    if(this.main.dataHandler.personIsSelected(node.nodes[0])){
+                        return '#000000';
+                    }
+                }
 
                 return this.scale(node.jobtitle);
             })
@@ -450,11 +466,10 @@ export default class NodeLinkDiagramComponent extends Visualization {
             //     this.main.visualizer.mouseOutNode(i.id);
             // })
             .on('mouseup', (event, node) => {
-                this.main.visualizer.mouseUpNode(super.nodeToPersonObject(node));
+                this.mouseOutNode(node)
             })
             .on('mousedown', (event, node) => {
-                console.log(node);
-                this.main.visualizer.mouseDownNode(super.nodeToPersonObject(node));
+                this.mouseDownNode(event, node);
             })
             .attr('class', 'node')
             .attr('stroke-width', (node) => {
@@ -465,6 +480,10 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         if(firstRun) this.drawnNodes.attr('transform', `translate(${(this.dimensions.width) / 2},${(this.dimensions.height) / 2})`)
         else this.drawnNodes.attr('transform', `translate(0,0)`)
+    }
+
+    changeSelection(){
+        this.update();
     }
 
     mouseOverNode(person){
@@ -488,32 +507,49 @@ export default class NodeLinkDiagramComponent extends Visualization {
         }
 
         this.edgesToHighlight = [];
-
-        super.mouseOutNode();
     }
 
-    mouseDownNode(person){
+    mouseDownNode(event, node){
         // get all connected edges
-        // getEmailsForPerson might not be very efficient 
+        if(event.shiftKey){
+            console.log('shift');
+            if(this.groupedJobtitles.has(node.jobtitle)){
+                this.groupedJobtitles.delete(node.jobtitle);
+            } else{
+                this.groupedJobtitles.add(node.jobtitle);
+            }
+            console.log(this.groupedJobtitles);
+            this.createNodesGroup();
+            this.update();
+            return;
+        }
+        
 
-        // let nodeIndex = this.personsIndex.get(id);
-        //Set highlighted to false
-        // console.log(this.nodes[nodeIndex]);
-        if(!this.main.dataHandler.personIsSelected(person)){
-            this.main.dataHandler.addSelectedPerson(person);
-            this.clickedNodes.set(person.id, person);
-            let adjacentEmails = this.main.dataHandler.getEmailsForPerson(person.id);
+        if(node.nodes === undefined){
+            this.addSelectedNode(node)
+        }
+        else{
+            for(let singleNode of node.nodes){
+                this.addSelectedNode(singleNode)
+            }
+        } 
+        this.main.visualizer.changeSelection();
+    }
+
+    addSelectedNode(node){
+        if(!this.main.dataHandler.personIsSelected(node)){
+            this.main.dataHandler.addSelectedPerson(node);
+            this.clickedNodes.set(node.id, node);
+            let adjacentEmails = this.main.dataHandler.getEmailsForPerson(node.id);
 
             for(let i = 0; i < adjacentEmails.length; i++){
                 this.edgesToHighlight.push(adjacentEmails[i].fromId + '.' + adjacentEmails[i].toId);       
             }
         } 
         else {
-            this.main.dataHandler.removeSelectedPerson(person);
-            this.clickedNodes.delete(person.id) 
+            this.main.dataHandler.removeSelectedPerson(node);
+            this.clickedNodes.delete(node.id) 
         }     
-
-        super.mouseDownNode();
     }
 
     mouseUpNode(person){
@@ -541,6 +577,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 this.main.dataHandler.removeSelectedPerson(super.nodeToPersonObject(node));
             }
         }
+        this.main.visualizer.changeSelection();
      }
 
     addClickedNodes(){
