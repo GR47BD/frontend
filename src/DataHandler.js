@@ -461,4 +461,34 @@ export default class DataHandler {
         }
         return jobtitleCount;
     }
+
+    /**
+     * THIS IS NOT EFFICIENT AT ALL
+     * should probably only be done by a button press by the user
+     * @returns {float, float, float} total edges, incoming edges, outgoing edges
+     */
+    getEmailStatisticsOfSelection(){
+        let totalEmails = new Set();
+        let stats = {
+            total: 0,
+            incoming: 0,
+            outgoing: 0
+        }
+
+        for(const person of this.selectedPersons){
+            // console.log(person[1]);
+            let emails = this.getEmailsForPerson(person[1].id);
+            
+            for(const email of emails){
+                totalEmails.add(email);
+                // console.log(email);
+                if(email.fromId === person[1].id) stats.outgoing++;
+                if(email.toId === person[1].id) stats.incoming++;
+            }
+        }
+
+        stats.total = totalEmails.size;
+
+        return stats;
+    }
 }

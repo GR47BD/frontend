@@ -223,7 +223,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
             this.updateDrawnNodes(this.main.dataHandler.dataChanged);
             this.updateDrawnEdges(this.main.dataHandler.dataChanged);
         });
-
         
         super.update();
     }
