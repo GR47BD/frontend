@@ -117,7 +117,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         this.simulation = d3.forceSimulation()
             .force('link', d3.forceLink().id(function (node) {
-                return node.id
+                if(node.nodes === undefined) return node.id;
+                else return node.jobtitle;
             }))
             .force("center", d3.forceCenter(this.centerForce.x, this.centerForce.y).strength(this.centerForce.strength))
             .force('collide', d3.forceCollide(d => this.collideForce.radius)
@@ -178,7 +179,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         }
 
         // Set edge data
-        // Remove any old edges drawn on the DOM
+        // Remove any old edges drawn on the DOMvc
         this.drawnEdges.data(this.edges).exit().remove();
         // Create new edges if needed
         this.drawnEdges.data(this.edges).enter().append('line');
@@ -194,7 +195,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         const linkStrength = this.linkForce.basis - (this.edges.length / this.linkForce.divider) * this.linkForce.penalty;
         const centerStrength = this.centerForce.basis - (this.edges.length / this.centerForce.divider) * this.centerForce.penalty;
 
-        this.simulation.force('link').links(this.edges);
+        this.simulation.force('link').links(this.edges); 
 
 
         let weightScale = d3.scaleLinear().domain(d3.extent(this.edges, (edge) => this.maxNr - edge.nr)).range([.1, 2])
@@ -242,7 +243,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         }   
 
         this.nodes = Array.from(groupedNodes.values())
-        console.log('this.nodes', this.nodes);
+        console.log('this.nodes:', this.nodes);
 
     }
 
@@ -273,43 +274,71 @@ export default class NodeLinkDiagramComponent extends Visualization {
         }
     }
 
-    createEdgesGroup(jobtitle){
-        let edgesMap = new Map();
-        console.log(jobtitle)
-        
+    createEdgesGroup(){
+        let groupedEdges = new Map();
+        this.maxNr = 0;
         for(const edge of this.edges){
-            if(edge.jobtitles.source === jobtitle && edge.jobtitles.target === jobtitle) continue;
-            
-            if(edge.jobtitles.source === jobtitle || edge.source === jobtitle){
-                const key = jobtitle + '.' + edge.target;
 
-                const mapValue = edgesMap.get(key);
-                if(mapValue === undefined){
-                    edge.source = jobtitle
-                    edgesMap.set(key, edge)
-                } 
-                else{
-                    mapValue.nr += 1;
-                    this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;                    
-                }
+            if(this.groupedJobtitles.has(edge.jobtitles.source) && this.groupedJobtitles.has(edge.jobtitles.target)){
+                this.addEdgeToGroup(edge, edge.jobtitles.source, edge.jobtitles.target, groupedEdges);
+            }     
+            else if(this.groupedJobtitles.has(edge.jobtitles.source)){
+                this.addEdgeToGroup(edge, edge.jobtitles.source, edge.target, groupedEdges);
             }
-            else if(edge.jobtitles.target === jobtitle || edge.target === jobtitle){
-                const key = edge.source + "." + jobtitle
-                const mapValue = edgesMap.get(key);
-                if(mapValue === undefined){
-                    edge.target = jobtitle
-                    edgesMap.set(key, edge)
-                } 
-                else{
-                    mapValue.nr += 1;
-                    this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;
-                }
+            else if(this.groupedJobtitles.has(edge.jobtitles.target) || this.groupedJobtitles.has(edge.target)){
+                this.addEdgeToGroup(edge, edge.source, edge.jobtitles.target, groupedEdges);
             }
-            else edgesMap.set(edge.source + "." + edge.target, edge)
+            else {
+                this.removeEdgeFromGroup(edge, groupedEdges);
+            }
         }
-        this.edges = Array.from(edgesMap.values());
-        console.log(this.edges)
+        this.edges = Array.from(groupedEdges.values());
+        console.log('this.edges: ', this.edges)
     }
+    
+    addEdgeToGroup(edge, source, target, groupedEdges){
+        const key = source + '.' + target;
+        const mapValue = groupedEdges.get(key);
+        if(mapValue === undefined && edge.edges === undefined){            
+            groupedEdges.set(key, 
+                {
+                jobtitles: edge.jobtitles,
+                edges: new Array(edge),
+                source: source,
+                target: target,
+                nr: edge.nr
+            });
+        } 
+        else if(mapValue === undefined){
+
+            groupedEdges.set(key, 
+                {
+                jobtitles: edge.jobtitles,
+                edges: edge.edges,
+                source: source,
+                target: target,
+                nr: edge.nr
+            });
+        }
+        else if(edge.edges === undefined){
+            mapValue.edges.push(edge);
+            mapValue.nr += 1;
+            this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;                    
+        }
+    }
+
+    removeEdgeFromGroup(edge, groupedEdges){
+        if(edge.edges === undefined){
+            groupedEdges.set(edge.source + "." + edge.target, edge)
+        }
+        else{
+
+            for(let groupedEdge of edge.edges){
+                groupedEdges.set(groupedEdge.source + "." + groupedEdge.target, groupedEdge);
+            }
+        }
+    }
+
 
     compareLists(list1, list2, isUnion = false){
         return list1.filter((set => a => isUnion === set.has(a.id))(new Set(list2.map(b => b.id))));
@@ -392,6 +421,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         if(this.groupOnJobtitle){
             this.groupedJobtitles = new Set(this.jobtitles);
+            // this.groupedJobtitles.delete('Unknown')
             this.createNodesGroup();
             this.createEdgesGroup();
         }
@@ -510,9 +540,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
     }
 
     mouseDownNode(event, node){
-        // get all connected edges
-        if(event.shiftKey){
-            console.log('shift');
+        if(event.shiftKey && this.groupOnJobtitle){
             if(this.groupedJobtitles.has(node.jobtitle)){
                 this.groupedJobtitles.delete(node.jobtitle);
             } else{
@@ -520,6 +548,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             }
             console.log(this.groupedJobtitles);
             this.createNodesGroup();
+            this.createEdgesGroup();
             this.update();
             return;
         }
