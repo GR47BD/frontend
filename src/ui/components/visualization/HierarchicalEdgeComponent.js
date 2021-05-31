@@ -85,35 +85,45 @@ export default class HierarchicalEdgeComponent extends Visualization {
             });
 
 		//#region 
-		//const persons = this.main.dataHandler.getPersons('all');
-		//var jobMapping = new Map();
+		const persons = this.main.dataHandler.getPersons('all');
+		var jobMapping = {};
 //
-		//for (const person of persons){
-		//	// Creating mapping of type: job title -> # people with this job title
-		//	const jobtitle_ = jobMapping.get(person.jobtitle);
-		//	if (jobtitle_ === undefined){
-		//		jobMapping.set(person.jobtitle, 1);
-		//	}
-		//	else{
-		//		jobMapping.set(person.jobtitle, jobtitle_+1);
-		//	}
-		//}
+		for (const person of persons){
+			// Creating mapping of type: job title -> # people with this job title
+			const jobtitle_ = jobMapping[person.jobtitle];
+			if (jobtitle_ === undefined){
+				jobMapping[person.jobtitle] = 1;
+			}
+			else{
+				jobMapping[person.jobtitle] = jobtitle_ + 1;
+			}
+		}
 //
 		//console.log(jobMapping);
 		//
 		//// Donut chart
-		//const color = d3.scaleOrdinal()
-		//	.domain(Array.from(this.jobMapping.keys()))
-		//	.range(d3.schemeCategory10);
+		const color = d3.scaleOrdinal()
+			.domain(Object.keys(jobMapping))
+			.range(d3.schemeCategory10);
 //
-		//const pie = d3.pie()
-		//		.sort(null)
-		//		.value(function(d) {return d.value;})
-		//const data_ready = pie(jobMapping);		
+		const pie = d3.pie()
+			.sort(null)
+			.value(d => d[1])
+		const data_ready = pie(Object.entries(jobMapping));
 //
-		//const arc = d3.arc()
-		//		.innerRadius(this.options.diameter * 0.25)
-		//		.outerRadius(this.options.diameter * 0.4)
+		const arc = d3.arc()
+			.innerRadius(this.options.diameter * 0.25)
+			.outerRadius(this.options.diameter * 0.4)
+				
+		this.svg.append('g')
+			.attr('class', 'pie')
+			.selectAll('.arc')
+			.data(data_ready)
+			.enter()
+			.append('path')
+			.attr('d', arc)
+			.classed('arc', true)
+			.attr('fill', d => color(d.data[1]))
 //
 		//var second_svg = d3.select("#hierarchical_div")
 		//	.append("svg")
@@ -201,7 +211,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
 		//#endregion
 
 		// Create the links
-		this.svg.selectAll("path").remove();
+		this.svg.selectAll(".hier-stroke").remove();
 		this.svg.selectAll("path").data(this.packageImports(root.leaves()))
 			.enter().append("path")
 			.each(d => {
