@@ -77,13 +77,11 @@ export default class HierarchicalEdgeComponent extends Visualization {
 				scale.domain(this.jobtitles);
 				return scale(node.data.parent.key);
 			})
-			.on('mouseup', (d, i) => {
-				this.highlighted.set(i.data.name, false)
-				this.update();
+			.on('mouseup', (event, node) => {
+				this.mouseOutNode(node);
             })
-            .on('mousedown', (d, i) => {
-				this.highlighted.set(i.data.name, true)
-				this.update();
+            .on('mousedown', (event, node) => {
+				this.mouseDownNode(event, node);
             });
 
 		//#region 
@@ -105,7 +103,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
 		//
 		//// Donut chart
 		//const color = d3.scaleOrdinal()
-		//	.domain(Object.keys(jobMapping))
+		//	.domain(Array.from(this.jobMapping.keys()))
 		//	.range(d3.schemeCategory10);
 //
 		//const pie = d3.pie()
@@ -151,7 +149,8 @@ export default class HierarchicalEdgeComponent extends Visualization {
 			mapping.set(person.id, {
 				"name": "job." + person.jobtitle + "." + holder.emailToName(person.email),
 				"size": 1,
-				"imports": []
+				"imports": [],
+				"id": person.id
 			});
 		}
 
@@ -268,7 +267,32 @@ export default class HierarchicalEdgeComponent extends Visualization {
 					return "hier-node";
 				}
 
+			})
+			.attr("fill", node => {
+				if (this.main.dataHandler.personIsSelected(node.data)){
+					return "steelblue";
+				}
+				return;
 			});
+	}
+
+	mouseDownNode(event, node){
+		if(!this.main.dataHandler.personIsSelected(node.data)){
+			this.main.dataHandler.addSelectedPerson(node.data);
+		}
+		this.highlighted.set(node.data.name, true)
+		//this.update();
+		this.main.visualizer.changeSelection();
+	}
+
+	mouseOutNode(node){
+		this.main.dataHandler.removeSelectedPerson(node.data);
+		this.highlighted.set(node.data.name, false)
+		this.update();
+	}
+
+	changeSelection(){
+		this.update();
 	}
 
 	// Create the hierarchy from node names
