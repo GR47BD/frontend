@@ -4,6 +4,8 @@ import DrawerContainerComponent from "@/ui/components/drawer/DrawerContainerComp
 import DrawerComponent from "@/ui/components/drawer/DrawerComponent";
 import VisualizationContainerComponent from "@/ui/components/visualization/VisualizationContainerComponent";
 import UploadButtonComponent from "@/ui/components/UploadButtonComponent";
+import JobSelectorComponent from "@/ui/components/JobSelectorComponent";
+import ApplyFilterComponent from "@/ui/components/ApplyFilterComponent";
 
 export default class VisualizeView {
     view(vnode) {
@@ -23,7 +25,10 @@ export default class VisualizeView {
 						<DrawerComponent>
 							<UploadButtonComponent main={main}></UploadButtonComponent>
 						</DrawerComponent>
-						<DrawerComponent>Options</DrawerComponent>
+						<DrawerComponent>Options
+							<JobSelectorComponent main={main}></JobSelectorComponent>
+							<ApplyFilterComponent main={main}></ApplyFilterComponent>
+						</DrawerComponent>
 					</DrawerContainerComponent>
 				</div>
             </div>

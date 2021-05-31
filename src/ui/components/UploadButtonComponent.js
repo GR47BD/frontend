@@ -22,6 +22,8 @@ export default class UploadButtonComponent {
                     this.main.dataHandler.timeSpan.startTime = this.main.dataHandler.timeSpan.minTime;
                     this.main.dataHandler.timeSpan.endTime = this.main.dataHandler.timeSpan.maxTime;
                     this.main.visualizer.update();
+                    this.main.jobSelector.updateData();
+                    this.main.applyFilter.updateData();
                 });
                 
             } else{
