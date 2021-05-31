@@ -78,18 +78,18 @@ export default class DataHandler {
     /**
      * Updates the data by re-applying the changed filters and selecting the data in the correct time span.
      */
-    update() {
+    update(filters = false) {
         this.dataChanged = true;
         this.persons.all = undefined;
         this.jobTitles.all = undefined;
-        this.updateFiltered();
+        this.updateFiltered(filters);
         this.updateTimed();
     }
 
     /**
      * Updates the data by re-applying the filters.
      */
-    updateFiltered() {
+    updateFiltered(multiFilters = false) {
         this.filteredData = [];
         this.timedData = [];
         this.firstIndex = 0;
@@ -100,7 +100,7 @@ export default class DataHandler {
         this.persons.timed = undefined;
 
         for(const item of this.data) {
-            if(!this.meetsFilters(item)) continue;
+            if(!this.meetsFilters(item,multiFilters)) continue;
 
             this.filteredData.push(item);
         }
@@ -123,17 +123,29 @@ export default class DataHandler {
     /**
      * Checks if the given item meets the filters that are set.
      * @param {Object} item A data item
+     * @param {Boolean} multipleFilters In current state
      * @returns If the item meets the filters.
      */
-    meetsFilters(item) {
-        for(const filter of this.filters) {
-            if(filter.type === FilterTypes.EQUAL && item[filter.column] !== filter.value) return false;
-            if(filter.type === FilterTypes.LESSER && item[filter.column] >= filter.value) return false;
-            if(filter.type === FilterTypes.GREATER && item[filter.column] <= filter.value) return false;
-            if(filter.type === FilterTypes.INCLUDES && !filter.value.includes(item[filter.column])) return false;
-        } 
+    meetsFilters(item,multipleFilters = false) {
+        if(multipleFilters) {
+            for(const filter of this.filters) {
+                if(filter.type === FilterTypes.EQUAL && item[filter.column] === filter.value) return true;
+                if(filter.type === FilterTypes.LESSER && item[filter.column] >= filter.value) return false;
+                if(filter.type === FilterTypes.GREATER && item[filter.column] <= filter.value) return false;
+                if(filter.type === FilterTypes.INCLUDES && !filter.value.includes(item[filter.column])) return false;
+            }
+            return false; 
+        } else {
+            for(const filter of this.filters) {
+                if(filter.type === FilterTypes.EQUAL && item[filter.column] !== filter.value) return false;
+                if(filter.type === FilterTypes.LESSER && item[filter.column] >= filter.value) return false;
+                if(filter.type === FilterTypes.GREATER && item[filter.column] <= filter.value) return false;
+                if(filter.type === FilterTypes.INCLUDES && !filter.value.includes(item[filter.column])) return false;
+            }
+            return true;
+        }
 
-        return true;
+        
     }
 
     /**
