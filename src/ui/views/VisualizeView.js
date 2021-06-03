@@ -16,16 +16,18 @@ export default class VisualizeView {
                 <MenuBarComponent></MenuBarComponent>
 				<div class="visualize-container">
 					<DrawerContainerComponent>
-						<DrawerComponent>Statistics</DrawerComponent>
+						<DrawerComponent title="Statistics" id="statistics-drawer">
+
+						</DrawerComponent>
 					</DrawerContainerComponent>
 					
 					<VisualizationContainerComponent main={main}></VisualizationContainerComponent>
 
 					<DrawerContainerComponent right={true}>
-						<DrawerComponent>
+						<DrawerComponent title="Data" right={true} id="data-drawer">
 							<UploadButtonComponent main={main}></UploadButtonComponent>
 						</DrawerComponent>
-						<DrawerComponent>Options
+						<DrawerComponent right={true} topless={true} id="options-drawer">
 							<JobSelectorComponent main={main}></JobSelectorComponent>
 							<ApplyFilterComponent main={main}></ApplyFilterComponent>
 						</DrawerComponent>
