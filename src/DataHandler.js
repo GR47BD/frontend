@@ -70,7 +70,7 @@ export default class DataHandler {
      * @param {String} name The name of the dataset
      */
     remove(name) {
-        this.data = this.data.filter(item => item.orgin !== name);
+        this.data = this.data.filter(item => item.origin !== name);
 
         this.update();
     }
@@ -158,10 +158,7 @@ export default class DataHandler {
         let newFirstIndex = 0;
         let newLastIndex = 0;
 
-        const firstDirection = this.filteredData[this.firstIndex].date.getTime() <= this.timeSpan.startTime;
-        const lastDirection = this.filteredData[this.lastIndex].date.getTime() <= this.timeSpan.endTime;
-
-        if(firstDirection) {
+        if(this.filteredData[this.firstIndex].date.getTime() < this.timeSpan.startTime) {
             for(let i = this.firstIndex; i < this.lastIndex; i++) {
                 if(this.filteredData[i].date.getTime() < this.timeSpan.startTime) continue;
 
@@ -171,7 +168,7 @@ export default class DataHandler {
 
             this.timedData = this.timedData.slice(newFirstIndex-this.firstIndex);
         }
-        else {
+        else if(this.filteredData[this.firstIndex].date.getTime() > this.timeSpan.startTime) {
             for(let i = this.firstIndex; i >= 0; i--) {
                 if(this.filteredData[i].date.getTime() >= this.timeSpan.startTime) continue;
                 
@@ -185,7 +182,7 @@ export default class DataHandler {
             this.timedData.push(...oldData);
         }
 
-        if(lastDirection) {
+        if(this.filteredData[this.lastIndex].date.getTime() < this.timeSpan.endTime) {
             for(let i = this.lastIndex; i < this.filteredData.length; i++) {
                 if(i === this.filteredData.length-1) newLastIndex = i;
                 if(this.filteredData[i].date.getTime() <= this.timeSpan.endTime) continue;
@@ -194,11 +191,11 @@ export default class DataHandler {
             }
 
             const oldData = this.timedData;
-            
+
             this.timedData = this.filteredData.slice(this.lastIndex+1, newLastIndex+1);
             this.timedData.unshift(...oldData);
         }
-        else {
+        else if(this.filteredData[this.lastIndex].date.getTime() > this.timeSpan.endTime) {
             for(let i = this.lastIndex; i >= this.firstIndex; i--) {
                 if(this.filteredData[i].date.getTime() > this.timeSpan.endTime) continue;
                 
@@ -206,9 +203,8 @@ export default class DataHandler {
                 break;
             }
 
-            this.timedData = this.timedData.slice(this.lastIndex-newLastIndex);
+            this.timedData = this.timedData.slice(0, newLastIndex-this.firstIndex);
         }
-
    
         this.dataChangedAmount = (Math.abs(newFirstIndex - this.firstIndex) + Math.abs(newLastIndex - this.lastIndex)) / this.data.length;
         

@@ -44,6 +44,7 @@
     "d3-voronoi": "^1.1.4",
     "jquery-csv": "^1.0.11",
     "mithril": "^2.0.4",
-    "nouislider": "^15.0.0"
+    "nouislider": "^15.0.0",
+    "reorder.js": "^2.2.4"
   }
 }
