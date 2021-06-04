@@ -66,7 +66,7 @@ export default class MassiveSequenceComponent extends Visualization {
         if(this.indicatorActive) {
             const start = this.main.dataHandler.timeSpan.startTime;
             const end = this.main.dataHandler.timeSpan.endTime;
-            const date = this.dateToString(this.approximateDate(start, end, (x-this.sizes.personsWidth)/(this.width-this.sizes.personsWidth)))
+            const date = this.dateToString(this.approximateDate(start, end, (x-this.sizes.personsWidth)/(this.width-this.sizes.personsWidth)));
 
             document.getElementById("massive-sequence-indicator").style.left = `${x}px`;
             document.getElementById("massive-sequence-indicator-date").innerText = date;
@@ -126,7 +126,7 @@ export default class MassiveSequenceComponent extends Visualization {
             
             const edgeY = Math.min(y1, y2);
             const edgeHeight = Math.max(y1, y2) - edgeY;
-            const gradient = this.graphics.createLinearGradient(0, edgeY + y, 0, edgeHeight + edgeY + y);
+            /*const gradient = this.graphics.createLinearGradient(0, edgeY + y, 0, edgeHeight + edgeY + y);
 
             if(y1 >= y2) {
                 gradient.addColorStop(0, "blue");
@@ -135,12 +135,12 @@ export default class MassiveSequenceComponent extends Visualization {
             else {
                 gradient.addColorStop(0, "yellow");
                 gradient.addColorStop(1, "blue");
-            }
+            }*/
 
             if(edgeX < 0) continue;
 
             this.graphics.globalAlpha = 0.2;
-            this.graphics.fillStyle = gradient;
+            this.graphics.fillStyle = "blue";
             this.graphics.fillRect(x + edgeX, y + edgeY, 1, edgeHeight);
             this.graphics.globalAlpha = 1;
         }
@@ -149,8 +149,7 @@ export default class MassiveSequenceComponent extends Visualization {
     update(){
         super.update();
 
-        this.persons = this.main.dataHandler.getPersons()
-        const startTime = new Date().getTime();
+        this.persons = this.main.dataHandler.getPersons();
         this.order = this.dataClusterer.sortDataByClusters();
         this.jobtitles = this.main.dataHandler.getJobTitles();
         this.scale = d3.scaleOrdinal(d3.schemeCategory10);
