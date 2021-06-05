@@ -8,15 +8,17 @@ export default class ApplyFilterComponent {
 
     oncreate() {
         const filterButton = document.getElementById("filter");
-        filterButton.addEventListener("click", (appliedFilters) => {
-            appliedFilters = this.main.jobSelector.selectedFilters();
-            this.main.dataHandler.filters = [];
-            appliedFilters.forEach(item => {
-                this.main.dataHandler.filters.push({type: 0, value: item, column: 'fromJobtitle'});
-            });
-            this.main.dataHandler.update(true); // seems like you cannot just call updateFiltered (does not work properly)
+        filterButton.addEventListener("click", () => {
+            let filterarray = this.main.dataHandler.filters;
+            filterarray.forEach((filter,index) => {if(filter.options) filterarray.splice(index,1)})
+            this.pushFilters();
+            this.main.dataHandler.update(); // seems like you cannot just call updateFiltered (does not work properly)
             this.main.visualizer.update();
         });
+    }
+
+    pushFilters() {
+        this.main.dataHandler.filters.push({type: 0, value: this.main.jobSelector.selectedFilters(), column: 'fromJobtitle', options: true});
     }
 
     updateData() {
