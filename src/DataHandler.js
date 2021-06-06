@@ -524,8 +524,8 @@ export default class DataHandler {
      * 
      */
     getDataOfSelection(name) {
-        if(name.indexOf("JobTitle") !== -1) {
-            return this.getJobtitles();
+        if(name.indexOf("Jobtitle") !== -1) {
+            return this.getJobTitles();
         } else {
             return this.getMessageType();
         }
