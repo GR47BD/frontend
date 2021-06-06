@@ -39,6 +39,10 @@ export default class DataHandler {
          */
         this.jobTitles = {}
         /**
+         * The messagetypes for each list of data
+         */
+        this.messageType = {}
+        /**
          * The persons for each list of data
          */
         this.persons = {}
@@ -320,6 +324,26 @@ export default class DataHandler {
         return this.jobTitles[selection];
     }
 
+    /**
+     *
+    * @returns an array with all messagetypes
+    */
+     getMessageType(selection = "timed"){
+        const emails = this.getEmails(selection);
+
+        if(this.messageType[selection] === undefined || this.messageType[selection].length === 0){
+            let messagetypes = new Set();
+
+            emails.forEach(value => {
+                messagetypes.add(value.messageType);
+            });
+
+            this.messageType[selection] = [...messagetypes];
+        }
+
+        return this.messageType[selection];
+    }
+
     getEmails(selection = "timed") {
         return this.dataFromSelectionName(selection);
     }
@@ -491,5 +515,19 @@ export default class DataHandler {
         stats.total = totalEmails.size;
 
         return stats;
+    }
+
+    /**
+     * A new function for the multiselectors
+     * This function should allow for future abstraction if needed
+     * @params {string} name This should be a string of the data you want
+     * 
+     */
+    getDataOfSelection(name) {
+        if(name.indexOf("JobTitle") !== -1) {
+            return this.getJobtitles();
+        } else {
+            return this.getMessageType();
+        }
     }
 }

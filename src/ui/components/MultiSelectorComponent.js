@@ -1,13 +1,16 @@
 const m = require('mithril');
 
-export default class JobSelectorComponent {
-    constructor() {
-        this.jobTitles = [];
+export default class MultiSelectorComponent {
+
+
+    controller(args) {
+        this.main = args.main;
     }
 
-    oninit(vnode) {
-        this.main = vnode.attrs.main;
-        this.main.jobSelector = this;
+    oninit() {
+        const selector = document.getElementById(this.main.selectorPurpose);
+        this.purpose = this.main.dataHandler.getDataOfSelection(this.main.selectorPurpose);
+        this.purpose.forEach(x => { selector.innerHTML += " <option id='"+x+"'value='"+x+"'style='background-color:Tomato;'>"+x+"</option>"});
     }
 
     /* This function is used when the data uploaded changes
@@ -37,16 +40,12 @@ export default class JobSelectorComponent {
 
     selectedFilters() {
         const jobselector = document.getElementById("jobselector");
-        let filters =  [].filter.call(jobselector.options, option => option.selected).map(option => option.text);
+        let filters = [].filter.call(jobselector.options, option => option.selected).map(option => option.text);
         this.updateColors(filters);
         return filters;
     }
 
-    view () {
-        return (
-            <div id="job"> 
-                <span id="jobselector">Upload File</span>
-            </div>
-        );
+    view (vnode) {
+        return m("select", {id: this.main.selectorPurpose});
     }
 }
