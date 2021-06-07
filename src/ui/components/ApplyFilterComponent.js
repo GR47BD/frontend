@@ -12,7 +12,6 @@ export default class ApplyFilterComponent {
         const filterButton = document.getElementById("filterButton");
         const filterSelector = document.getElementById("filterSelector");
         filterButton.addEventListener("click", () => {
-
             this.pushFilters();
             this.main.dataHandler.update(); 
             this.main.visualizer.update();
@@ -29,9 +28,9 @@ export default class ApplyFilterComponent {
 
     pushFilters() {
         let filterarray = this.main.dataHandler.filters;
-        filterarray.forEach((filter,index) => {if(filter.options) filterarray.splice(index,1)});
+        this.main.dataHandler.filters = filterarray.filter((filter) => {return !filter.options});
         for (let [key,value] of this.availableFilters) {
-            filterarray.push({type: 0, value: value.selectedFilters(), column: key, options: true});
+            this.main.dataHandler.filters.push({type: 0, value: value.selectedFilters(), column: key, options: true});
         }
 
     }
@@ -57,7 +56,6 @@ export default class ApplyFilterComponent {
     hideOption(indexOf) {
         filterSelector.options.selectedIndex = 0;
         filterSelector.options[indexOf].setAttribute("hidden", true);
-
     }
 
     view() {
