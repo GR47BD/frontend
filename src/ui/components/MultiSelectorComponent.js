@@ -1,13 +1,17 @@
 const m = require('mithril');
 
-export default class JobSelectorComponent {
-    constructor() {
-        this.jobTitles = [];
+export default class MultiSelectorComponent {
+
+
+    constructor(main, name) {
+        this.main = main;
+        this.name = name;
+        this.purpose = this.main.dataHandler.getDataOfSelection(this.name);
     }
 
-    oninit(vnode) {
-        this.main = vnode.attrs.main;
-        this.main.jobSelector = this;
+    oncreate() {
+        const selector = document.getElementById(this.name);
+        this.purpose.forEach(x => { selector.innerHTML += " <option id='"+this.name+x+"'value='"+x+"'style='background-color:Tomato;'>"+x+"</option>"});
     }
 
     /* This function is used when the data uploaded changes
@@ -25,28 +29,24 @@ export default class JobSelectorComponent {
     }
 
     updateColors (selectedJobs) {
-        this.jobTitles.forEach(item => {
-            document.getElementById(item).style = "";
+        this.purpose.forEach(item => {
+            document.getElementById(this.name+item).style = "";
         });
         selectedJobs.forEach(item => {
-            document.getElementById(item).style = "background-color:Tomato;";
+            document.getElementById(this.name+item).style = "background-color:Tomato;";
         });
 
     }
 
 
     selectedFilters() {
-        const jobselector = document.getElementById("jobselector");
-        let filters =  [].filter.call(jobselector.options, option => option.selected).map(option => option.text);
+        const selector = document.getElementById(this.name);
+        let filters = [].filter.call(selector.options, option => option.selected).map(option => option.text);
         this.updateColors(filters);
         return filters;
     }
 
     view () {
-        return (
-            <div id="job"> 
-                <span id="jobselector">Upload File</span>
-            </div>
-        );
+        return m("select", {id: this.name, multiple: true});
     }
 }

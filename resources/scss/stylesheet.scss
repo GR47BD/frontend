@@ -84,22 +84,20 @@ body {
 	margin-bottom: $margin-container;
 	background: $back-col;	
 	font-family: $f-family;
+	overflow: hidden;
 }
+
 .drawer-container {
 	display: flex;
 	flex-direction: column;
 	margin: 20px 20px 20px 0;
-	height: calc(100vh - 90px);
+	height: calc(100vh - 123px - 60px);
 	width: 250px;
-	margin-top: 10px;
 	color: white;
-	padding: 10px;
+	padding: 10px 10px 10px 0;
 	align-items: center;
 	justify-content: center;
-
-	&.right {
-		margin: 20px 0 20px 20px;
-	}
+	transition: .5s margin-left, .5s margin-right;
 
 	.drawer {
 		background: $container-col;
@@ -107,14 +105,83 @@ body {
 		font-family: $f-family;
 		flex-grow: 1;
 		width: 100%;
-		//padding: 10px;
 
 		margin-bottom: 10px;
-		border: none;
-		border-radius: 10px;
+		border-top-right-radius: 10px;
+		border-bottom-right-radius: 10px;
 
 		&:last-child {
 			margin-bottom: $margin-container;
+		}
+
+		.top {
+			display: flex;
+			flex-direction: row;
+			padding: 10px 10px 0 10px;
+			justify-content: space-between;
+
+			.title {
+				line-height: 20px;
+			}
+
+			.button {
+				height: 20px;
+				width: 20px;
+				transform: rotate(0deg);
+				cursor: pointer;
+				transition: .5s transform;
+
+				svg {
+					fill: white;
+				}
+
+				&.open {
+					transform: rotate(180deg);
+				}
+			}
+		}
+
+		.content {
+			padding: 10px;
+		}
+
+		&.right {
+			.top {
+				justify-content: initial;
+				padding: 10px 10px 0 10px;
+
+				.title {
+					margin-left: 10px;
+				}
+
+				.button {
+					transform: rotate(180deg);
+	
+					&.open {
+						transform: rotate(0deg);
+					}
+				}
+			}
+		}
+	}
+
+	&.closed {
+		margin-left: -210px;
+	}
+
+	&.right {
+		margin: 20px 0 20px 20px;
+		padding: 10px 0 10px 10px;
+
+		.drawer {
+			border-top-left-radius: 10px;
+			border-bottom-left-radius: 10px;
+			border-top-right-radius: 0;
+			border-bottom-right-radius: 0;
+		}
+
+		&.closed {
+			margin-right: -210px;
 		}
 	}
 }
@@ -125,6 +192,11 @@ body {
 	flex-direction: row;
 	flex-wrap: wrap;
 	font-family: $f-family;
+	align-content: flex-start;
+	overflow-y: auto;
+	overflow-x: hidden;
+	height: calc(100vh - 123px - 60px);
+	margin-top: 30px;
 }
 
 .visualization-panel {
@@ -133,9 +205,7 @@ body {
 
 	&.half {
 		width: 50%;
-
 	}
-		
 }
 
 .timebar {
@@ -210,6 +280,42 @@ body {
 	}
 }
 
+.massive-sequence-container {
+	position: relative;
+	width: 100%;
+
+	.indicator {
+		position: absolute;
+		top: 0;
+		left: 100px;
+		height: 100%;
+		display: flex;
+		flex-direction: row;
+		pointer-events: none;
+
+		&.inactive {
+			display: none;
+		}
+
+		.line {
+			height: calc(100% - 4px);
+			width: 1px;
+			background: black;
+		}
+
+		.date {
+			font-size: 9px;
+			white-space: nowrap;
+			overflow: hidden;
+			position: absolute;
+			width: 40px;
+			height: 10px;
+			transform: rotate(90deg);
+			bottom: 19px;
+			left: -12px;
+		}
+	}
+}
 
 .node:hover {
 	stroke-width: 2px;

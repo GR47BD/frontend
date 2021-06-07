@@ -39,6 +39,10 @@ export default class DataHandler {
          */
         this.jobTitles = {}
         /**
+         * The messagetypes for each list of data
+         */
+        this.messageType = {}
+        /**
          * The persons for each list of data
          */
         this.persons = {}
@@ -70,7 +74,7 @@ export default class DataHandler {
      * @param {String} name The name of the dataset
      */
     remove(name) {
-        this.data = this.data.filter(item => item.orgin !== name);
+        this.data = this.data.filter(item => item.origin !== name);
 
         this.update();
     }
@@ -78,18 +82,18 @@ export default class DataHandler {
     /**
      * Updates the data by re-applying the changed filters and selecting the data in the correct time span.
      */
-    update(filters = false) {
+    update() {
         this.dataChanged = true;
         this.persons.all = undefined;
         this.jobTitles.all = undefined;
-        this.updateFiltered(filters);
+        this.updateFiltered();
         this.updateTimed();
     }
 
     /**
      * Updates the data by re-applying the filters.
      */
-    updateFiltered(multiFilters = false) {
+    updateFiltered() {
         this.filteredData = [];
         this.timedData = [];
         this.firstIndex = 0;
@@ -100,7 +104,7 @@ export default class DataHandler {
         this.persons.timed = undefined;
 
         for(const item of this.data) {
-            if(!this.meetsFilters(item,multiFilters)) continue;
+            if(!this.meetsFilters(item)) continue;
 
             this.filteredData.push(item);
         }
@@ -123,27 +127,20 @@ export default class DataHandler {
     /**
      * Checks if the given item meets the filters that are set.
      * @param {Object} item A data item
-     * @param {Boolean} multipleFilters In current state
      * @returns If the item meets the filters.
      */
-    meetsFilters(item,multipleFilters = false) {
-        if(multipleFilters) {
-            for(const filter of this.filters) {
-                if(filter.type === FilterTypes.EQUAL && item[filter.column] === filter.value) return true;
-                if(filter.type === FilterTypes.LESSER && item[filter.column] >= filter.value) return false;
-                if(filter.type === FilterTypes.GREATER && item[filter.column] <= filter.value) return false;
-                if(filter.type === FilterTypes.INCLUDES && !filter.value.includes(item[filter.column])) return false;
+    meetsFilters(item) {
+        for(const filter of this.filters) {
+            if(filter.type === FilterTypes.EQUAL) {
+                if (Array.isArray(filter.value) && !filter.value.includes(item[filter.column])) return false;
+                if (!Array.isArray(filter.value) && item[filter.column] !== filter.value) return false;    
             }
-            return false; 
-        } else {
-            for(const filter of this.filters) {
-                if(filter.type === FilterTypes.EQUAL && item[filter.column] !== filter.value) return false;
-                if(filter.type === FilterTypes.LESSER && item[filter.column] >= filter.value) return false;
-                if(filter.type === FilterTypes.GREATER && item[filter.column] <= filter.value) return false;
-                if(filter.type === FilterTypes.INCLUDES && !filter.value.includes(item[filter.column])) return false;
-            }
-            return true;
+            if(filter.type === FilterTypes.LESSER && item[filter.column] >= filter.value) return false;
+            if(filter.type === FilterTypes.GREATER && item[filter.column] <= filter.value) return false;
+            if(filter.type === FilterTypes.INCLUDES && !filter.value.includes(item[filter.column])) return false;
         }
+        return true;
+ 
 
         
     }
@@ -158,10 +155,7 @@ export default class DataHandler {
         let newFirstIndex = 0;
         let newLastIndex = 0;
 
-        const firstDirection = this.filteredData[this.firstIndex].date.getTime() <= this.timeSpan.startTime;
-        const lastDirection = this.filteredData[this.lastIndex].date.getTime() <= this.timeSpan.endTime;
-
-        if(firstDirection) {
+        if(this.filteredData[this.firstIndex].date.getTime() < this.timeSpan.startTime) {
             for(let i = this.firstIndex; i < this.lastIndex; i++) {
                 if(this.filteredData[i].date.getTime() < this.timeSpan.startTime) continue;
 
@@ -171,7 +165,7 @@ export default class DataHandler {
 
             this.timedData = this.timedData.slice(newFirstIndex-this.firstIndex);
         }
-        else {
+        else if(this.filteredData[this.firstIndex].date.getTime() > this.timeSpan.startTime) {
             for(let i = this.firstIndex; i >= 0; i--) {
                 if(this.filteredData[i].date.getTime() >= this.timeSpan.startTime) continue;
                 
@@ -185,7 +179,7 @@ export default class DataHandler {
             this.timedData.push(...oldData);
         }
 
-        if(lastDirection) {
+        if(this.filteredData[this.lastIndex].date.getTime() < this.timeSpan.endTime) {
             for(let i = this.lastIndex; i < this.filteredData.length; i++) {
                 if(i === this.filteredData.length-1) newLastIndex = i;
                 if(this.filteredData[i].date.getTime() <= this.timeSpan.endTime) continue;
@@ -194,11 +188,11 @@ export default class DataHandler {
             }
 
             const oldData = this.timedData;
-            
+
             this.timedData = this.filteredData.slice(this.lastIndex+1, newLastIndex+1);
             this.timedData.unshift(...oldData);
         }
-        else {
+        else if(this.filteredData[this.lastIndex].date.getTime() > this.timeSpan.endTime) {
             for(let i = this.lastIndex; i >= this.firstIndex; i--) {
                 if(this.filteredData[i].date.getTime() > this.timeSpan.endTime) continue;
                 
@@ -206,9 +200,8 @@ export default class DataHandler {
                 break;
             }
 
-            this.timedData = this.timedData.slice(this.lastIndex-newLastIndex);
+            this.timedData = this.timedData.slice(0, newLastIndex-this.firstIndex);
         }
-
    
         this.dataChangedAmount = (Math.abs(newFirstIndex - this.firstIndex) + Math.abs(newLastIndex - this.lastIndex)) / this.data.length;
         
@@ -329,6 +322,26 @@ export default class DataHandler {
         }
 
         return this.jobTitles[selection];
+    }
+
+    /**
+     *
+    * @returns an array with all messagetypes
+    */
+     getMessageType(selection = "timed"){
+        const emails = this.getEmails(selection);
+
+        if(this.messageType[selection] === undefined || this.messageType[selection].length === 0){
+            let messagetypes = new Set();
+
+            emails.forEach(value => {
+                messagetypes.add(value.messageType);
+            });
+
+            this.messageType[selection] = [...messagetypes];
+        }
+
+        return this.messageType[selection];
     }
 
     getEmails(selection = "timed") {
@@ -502,5 +515,19 @@ export default class DataHandler {
         stats.total = totalEmails.size;
 
         return stats;
+    }
+
+    /**
+     * A new function for the multiselectors
+     * This function should allow for future abstraction if needed
+     * @params {string} name This should be a string of the data you want
+     * 
+     */
+    getDataOfSelection(name) {
+        if(name.indexOf("Jobtitle") !== -1) {
+            return this.getJobTitles();
+        } else {
+            return this.getMessageType();
+        }
     }
 }
