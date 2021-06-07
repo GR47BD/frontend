@@ -63,11 +63,13 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         this.usingBrushTool = false;
 
-        this.groupOnJobtitle = false;
+        this.groupOnJobtitle = true;
+        this.startGrouponJobtitle = false;
 
         this.clickedNodes = new Map();
 
         this.groupedJobtitles = new Set();
+        this.groupedEdges = new Map();
     }
 
     oninit(vnode) {
@@ -173,10 +175,10 @@ export default class NodeLinkDiagramComponent extends Visualization {
         }  
 
         // Make sure all edges that should be highlighted get highlighted
-        for(let i = 0; i < this.edgesToHighlight.length; i++){
-            let edge = this.mailMap.get(this.edgesToHighlight[i]);
-            edge.highlighted = true;
-        }
+        // for(let i = 0; i < this.edgesToHighlight.length; i++){
+        //     let edge = this.mailMap.get(this.edgesToHighlight[i]);
+        //     edge.highlighted = true;
+        // }
 
         // Set edge data
         // Remove any old edges drawn on the DOMvc
@@ -203,7 +205,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // .strength(link => (link.nr/this.maxNr)*this.linkForce.amountBonus + linkStrength);
         .strength(edge => weightScale(edge.nr));
 
-        
+        console.log('edges:', this.edges)
 
         // Change the strength of a link relative to the number of emails in that link
 
@@ -228,116 +230,21 @@ export default class NodeLinkDiagramComponent extends Visualization {
         super.update();
     }
 
-    createNodesGroup(){
-        let groupedNodes = new Map();
-        this.maxNodes = 0;
+    updateData(dataChangedAmount){
+        this.updateNodes(true);
+        this.updateEdges();  
 
-        for(let node of this.nodes){
-            if(this.groupedJobtitles.has(node.jobtitle)){
-                this.addNodeToGroup(node, groupedNodes);
-            } 
-            else {
-                this.removeNodeFromGroup(node, groupedNodes);
-            }            
-        }   
-
-        this.nodes = Array.from(groupedNodes.values())
-        console.log('this.nodes:', this.nodes);
-
-    }
-
-    addNodeToGroup(node, groupedNodes){
-        const group = groupedNodes.get(node.jobtitle);
-        if(group === undefined && node.nodes === undefined){
-            groupedNodes.set(node.jobtitle, {jobtitle: node.jobtitle, nodes: new Array(node)})
-            this.maxNodes = 1;
-        }  
-        else if(group === undefined){
-            groupedNodes.set(node.jobtitle, {jobtitle: node.jobtitle, nodes: node.nodes})
-            this.maxNodes = this.maxNodes > node.nodes.length ? this.maxNodes : node.nodes.length;
-        }
-        else if(node.nodes === undefined) {
-                group.nodes.push(node)
-                this.maxNodes = this.maxNodes > group.nodes.length ? this.maxNodes : group.nodes.length;
-        }
-    }
-
-    removeNodeFromGroup(node, groupedNodes){
-        if(node.nodes === undefined){
-            groupedNodes.set(node.id, node);
-        }
-        else {
-            for(let groupNode of node.nodes){
-                groupedNodes.set(groupNode.id, groupNode);
+        if(this.groupOnJobtitle){
+            if(this.startGrouponJobtitle){
+                this.groupedJobtitles = new Set(this.jobtitles);
             }
+            this.createNodesGroup();
+            this.createEdgesGroup();
         }
+
+        let newAlpha = (dataChangedAmount * (0.5 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget;
+        this.simulation.alpha(newAlpha);
     }
-
-    createEdgesGroup(){
-        let groupedEdges = new Map();
-        this.maxNr = 0;
-        for(const edge of this.edges){
-
-            if(this.groupedJobtitles.has(edge.jobtitles.source) && this.groupedJobtitles.has(edge.jobtitles.target)){
-                this.addEdgeToGroup(edge, edge.jobtitles.source, edge.jobtitles.target, groupedEdges);
-            }     
-            else if(this.groupedJobtitles.has(edge.jobtitles.source)){
-                this.addEdgeToGroup(edge, edge.jobtitles.source, edge.target, groupedEdges);
-            }
-            else if(this.groupedJobtitles.has(edge.jobtitles.target) || this.groupedJobtitles.has(edge.target)){
-                this.addEdgeToGroup(edge, edge.source, edge.jobtitles.target, groupedEdges);
-            }
-            else {
-                this.removeEdgeFromGroup(edge, groupedEdges);
-            }
-        }
-        this.edges = Array.from(groupedEdges.values());
-        console.log('this.edges: ', this.edges)
-    }
-    
-    addEdgeToGroup(edge, source, target, groupedEdges){
-        const key = source + '.' + target;
-        const mapValue = groupedEdges.get(key);
-        if(mapValue === undefined && edge.edges === undefined){            
-            groupedEdges.set(key, 
-                {
-                jobtitles: edge.jobtitles,
-                edges: new Array(edge),
-                source: source,
-                target: target,
-                nr: edge.nr
-            });
-        } 
-        else if(mapValue === undefined){
-
-            groupedEdges.set(key, 
-                {
-                jobtitles: edge.jobtitles,
-                edges: edge.edges,
-                source: source,
-                target: target,
-                nr: edge.nr
-            });
-        }
-        else if(edge.edges === undefined){
-            mapValue.edges.push(edge);
-            mapValue.nr += 1;
-            this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;                    
-        }
-    }
-
-    removeEdgeFromGroup(edge, groupedEdges){
-        if(edge.edges === undefined){
-            groupedEdges.set(edge.source + "." + edge.target, edge)
-        }
-        else{
-
-            for(let groupedEdge of edge.edges){
-                groupedEdges.set(groupedEdge.source + "." + groupedEdge.target, groupedEdge);
-            }
-        }
-    }
-
 
     compareLists(list1, list2, isUnion = false){
         return list1.filter((set => a => isUnion === set.has(a.id))(new Set(list2.map(b => b.id))));
@@ -376,13 +283,17 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // emails of current timeframe
         let emails = this.main.dataHandler.getEmails();
 
-        emails = emails.map(email => {
+        this.edges = emails.map(email => {
             return {
                 source: email.fromId,
                 target: email.toId,
                 jobtitles: {
                     source: email.fromJobtitle,
                     target: email.toJobtitle,
+                },
+                ids: {
+                    source: email.fromId,
+                    target: email.toId,
                 },
                 sentiment: email.sentiment,     
                 date: email.date,
@@ -391,43 +302,166 @@ export default class NodeLinkDiagramComponent extends Visualization {
             }
         });
 
-        this.mailMap = new Map();
-        this.maxNr = 0;
+
+        // this.removeDuplicateEdges
+
+    }
+
+    /**
+     * This function will reduce the amount of edges from the start but then the edges will also be deleted.
+        By not using this there will be less better performance but all the edges will still be saved and grouped in this.edges.
+        When performance becomes a problem this can be used to remove all edges between the same nodes so there is only one edge left between each node.
+     **/    
+    removeDuplicateEdges(){
+        // this.mailMap = new Map();
+        // this.maxNr = 0;
         
-        for(const email of emails) {
-            const key = email.source + "." + email.target;
-            const mapValue = this.mailMap.get(key)
+        // for(const email of this.edges) {
+        //     const key = email.source + "." + email.target;
+        //     const mapValue = this.mailMap.get(key)
 
-            if(mapValue === undefined) {
-                this.mailMap.set(key, email);
-                this.maxNr = 1;
-            }
+        //     if(mapValue === undefined) {
+        //         this.mailMap.set(key, email);
+        //         this.maxNr = 1;
+        //     }
+        //     else {
+        //         mapValue.nr += 1;
+        //         this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;
+        //     }
+        // }
+
+        // this.edges = Array.from(this.mailMap.values());
+    }
+
+    /**
+     * loops through all nodes to check if they need to be added from a group or removed from a group
+     */
+    createNodesGroup(){
+        let groupedNodes = new Map();
+        this.maxNodes = 0;
+
+        for(let node of this.nodes){
+            if(this.groupedJobtitles.has(node.jobtitle)){
+                this.addNodeToGroup(node, groupedNodes);
+            } 
             else {
-                mapValue.nr += 1;
-                this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;
+                this.removeNodeFromGroup(node, groupedNodes);
+            }            
+        }   
+
+        this.nodes = Array.from(groupedNodes.values())
+        console.log('this.nodes:', groupedNodes);
+
+        console.log('this.nodes:', this.nodes);
+
+    }
+
+    /**
+     * adds the given node to the given groupedNodes map. 
+     * @param {*} node 
+     * @param {Map} groupedNodes 
+     */
+    addNodeToGroup(node, groupedNodes){
+        const group = groupedNodes.get(node.jobtitle);
+
+        // If there is no group in the groupedNodes with the jobtitle of the node yet, 
+        // there needs to be added a group of this jobtitle with as nodes an array with the current node.
+        if(group === undefined && node.nodes === undefined){
+            groupedNodes.set(node.jobtitle, {jobtitle: node.jobtitle, nodes: new Array(node)})
+            this.maxNodes = 1;
+        }  
+        // If there is no group but there are nodes in node.nodes, the group of this jobtitle needs to 
+        // be added with as nodes the given node.nodes.
+        else if(group === undefined){
+            groupedNodes.set(node.jobtitle, {jobtitle: node.jobtitle, nodes: node.nodes})
+            this.maxNodes = this.maxNodes > node.nodes.length ? this.maxNodes : node.nodes.length;
+        }
+        // If node.nodes is undefined but there is a group, this node needs to be pushed to the group. 
+        else if(node.nodes === undefined) {
+                group.nodes.push(node)
+                this.maxNodes = this.maxNodes > group.nodes.length ? this.maxNodes : group.nodes.length;
+        }
+    }
+    /**
+     * adds the given node as a single node to the groupedNodes array if node.nodes is empty, else it adds every 
+     * node in node.nodes as a single node. So it removes the given node form its group and adds it as a single node.
+     * @param {*} node 
+     * @param {*} groupedNodes 
+     */
+    removeNodeFromGroup(node, groupedNodes){
+        if(node.nodes === undefined){
+            groupedNodes.set(node.id, node);
+        }
+        else {
+            for(let groupNode of node.nodes){
+                groupedNodes.set(groupNode.id, groupNode);
             }
         }
-
-
-        this.edges = Array.from(this.mailMap.values());
     }
 
-
-
-    updateData(dataChangedAmount){
-        this.updateNodes(true);
-        this.updateEdges();  
-
-        if(this.groupOnJobtitle){
-            this.groupedJobtitles = new Set(this.jobtitles);
-            // this.groupedJobtitles.delete('Unknown')
-            this.createNodesGroup();
-            this.createEdgesGroup();
+    /**
+     * loops through all edges to check in wich group they need to be
+     */
+    createEdgesGroup(){
+        this.groupedEdges = new Map();
+        this.maxNr = 0;
+        for(const edge of this.edges){
+            this.checkEdgeForGroup(edge);
         }
-
-        let newAlpha = (dataChangedAmount * (0.5 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget;
-        this.simulation.alpha(newAlpha);
+        this.edges = Array.from(this.groupedEdges.values());
+        console.log('this.edges: ', this.edges)
     }
+
+    /**
+     * checks what the source and target of each edge needs to be, and than add the edge to its group. 
+     * When the sources jobtitle is in this.groupedjobtitles the source is the jobtitle, else the source is the target.
+     * The same goes for the target. 
+     * @param {*} edge 
+     */
+    checkEdgeForGroup(edge){
+        const source = this.groupedJobtitles.has(edge.jobtitles.source) ? edge.jobtitles.source : edge.ids.source;
+        const target = this.groupedJobtitles.has(edge.jobtitles.target) ? edge.jobtitles.target : edge.ids.target;
+        this.addEdgeToGroup(edge, source, target);
+    }
+    
+    /**
+     * Adds the given edge to its right place in the groupededges map based on the given source and target. 
+     * @param {*} edge 
+     * @param {string} source 
+     * @param {string} target 
+     */
+    addEdgeToGroup(edge, source, target){
+        const key = source + '.' + target;
+        const mapValue = this.groupedEdges.get(key);
+
+        // If there is no edge with the given source and target in the groupedEdges map and also no edges array on the edge,
+        // the edge gets added to the grouped edges map with the value for edges an array with only this edge.
+        if(mapValue === undefined && edge.edges === undefined){     
+            this.groupedEdges.set(key, 
+                {
+                jobtitles: edge.jobtitles,
+                ids: edge.ids,
+                edges: new Array(edge),
+                source: source,
+                target: target,
+                nr: edge.nr
+            });                
+        }    
+        // If there is an edge with the given source and target in the groupedEdges map and no edges array on the current edge,
+        // the current edge needs to be added to the group in the map and the number of edges in that group increase.
+        else if(edge.edges === undefined) {
+            mapValue.edges.push(edge)
+            mapValue.nr += 1;
+            this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;                    
+        }
+        // If edge.edges is defined it is already a group, so each value of the group needs to be checked again and added to
+        // the right group with the function checkEdgeForGroup so there happens recursion here. 
+        else{
+            for(let groupedEdge of edge.edges){
+                this.checkEdgeForGroup(groupedEdge);
+            }
+        }            
+    }     
 
     updateDrawnEdges(firstRun) {
         this.drawnEdges = this.svg.select('.edge').selectAll('line');
@@ -446,6 +480,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             })
             .attr('stroke', edge => {
                 const alpha = (this.edgeOptions.amountBonus * edge.nr / this.maxNr + this.edgeOptions.basis).toFixed(2);
+                // const alpha = 1;
                 if(edge.highlighted){
                     return `rgba(255,100,0,${alpha})`;
                 }
@@ -541,8 +576,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
     mouseDownNode(event, node){
         if(event.shiftKey && this.groupOnJobtitle){
             if(this.groupedJobtitles.has(node.jobtitle)){
+                console.log('delete jobtitle: ', node.jobtitle)
                 this.groupedJobtitles.delete(node.jobtitle);
             } else{
+                console.log('add jobtitle: ', node.jobtitle)
+
                 this.groupedJobtitles.add(node.jobtitle);
             }
             console.log(this.groupedJobtitles);
