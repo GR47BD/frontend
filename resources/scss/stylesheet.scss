@@ -227,9 +227,10 @@ body {
 }
 
 rect.selection {
-    stroke          : gray;
+    stroke          : rgb(132, 160, 255);
+	stroke-width: 3px;
     stroke-dasharray: 4px;
-    stroke-opacity  : 0.5;
+    stroke-opacity  : 0.8;
     fill            : transparent;
 }
 #custom-button {
