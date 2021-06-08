@@ -128,7 +128,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 .iterations(this.collideForce.iterations))
                 .tick(this.forces.ticks);
 
-        this.simulation.alphaTarget(this.simulationSettings.alphaTarget).alphaDecay(this.simulationSettings.alphaDecay);
+        this.simulation.alphaTarget(this.simulationSettings.alphaTarget).alphaDecay(this.simulationSettings.alphaDecay).velocityDecay(0.5);
         
 
         this.update(true);
@@ -217,12 +217,20 @@ export default class NodeLinkDiagramComponent extends Visualization {
             let newAlpha = (dataChangedAmount * (0.7 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget;
             let resetSimulationThreshold = 0.01;
             if(this.simulationSettings.alphaTarget - newAlpha > resetSimulationThreshold){
+                
                 this.simulation.alpha(newAlpha);
-            }           
+                
+            }
+            this.simulation.restart();           
 
-        }        
-
+        } 
+        
         this.simulation.on('tick', () => {
+            // console.log(this.simulation.alpha());
+            if(this.simulation.alpha() <= this.simulationSettings.alphaTarget + 0.001){
+                // this.simulation.stop();
+            }       
+
             this.updateDrawnNodes(this.main.dataHandler.dataChanged);
             this.updateDrawnEdges(this.main.dataHandler.dataChanged);
         });
