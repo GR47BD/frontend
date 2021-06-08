@@ -118,10 +118,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
 
         this.simulation = d3.forceSimulation()
-            .force('link', d3.forceLink().id(function (node) {
-                if(node.nodes === undefined) return node.id;
-                else return node.jobtitle;
-            }))
+            .force('link', d3.forceLink().id(node => {return node.id}))
             .force("center", d3.forceCenter(this.centerForce.x, this.centerForce.y).strength(this.centerForce.strength))
             .force('collide', d3.forceCollide(d => this.collideForce.radius)
                 .strength(this.collideForce.strength)
@@ -166,9 +163,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
                     highlighted: false
                 }
             });
-        }
-
-        
+        }        
 
         if(this.main.dataHandler.dataChanged){
             this.updateData(dataChangedAmount);
@@ -321,24 +316,24 @@ export default class NodeLinkDiagramComponent extends Visualization {
         When performance becomes a problem this can be used to remove all edges between the same nodes so there is only one edge left between each node.
      **/    
     removeDuplicateEdges(){
-        // this.mailMap = new Map();
-        // this.maxNr = 0;
+        this.mailMap = new Map();
+        this.maxNr = 0;
         
-        // for(const email of this.edges) {
-        //     const key = email.source + "." + email.target;
-        //     const mapValue = this.mailMap.get(key)
+        for(const email of this.edges) {
+            const key = email.source + "." + email.target;
+            const mapValue = this.mailMap.get(key)
 
-        //     if(mapValue === undefined) {
-        //         this.mailMap.set(key, email);
-        //         this.maxNr = 1;
-        //     }
-        //     else {
-        //         mapValue.nr += 1;
-        //         this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;
-        //     }
-        // }
+            if(mapValue === undefined) {
+                this.mailMap.set(key, email);
+                this.maxNr = 1;
+            }
+            else {
+                mapValue.nr += 1;
+                this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;
+            }
+        }
 
-        // this.edges = Array.from(this.mailMap.values());
+        this.edges = Array.from(this.mailMap.values());
     }
 
     /**
@@ -375,13 +370,13 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // If there is no group in the groupedNodes with the jobtitle of the node yet, 
         // there needs to be added a group of this jobtitle with as nodes an array with the current node.
         if(group === undefined && node.nodes === undefined){
-            groupedNodes.set(node.jobtitle, {jobtitle: node.jobtitle, nodes: new Array(node)})
+            groupedNodes.set(node.jobtitle, {id: node.jobtitle, jobtitle: node.jobtitle, nodes: new Array(node)})
             this.maxNodes = 1;
         }  
         // If there is no group but there are nodes in node.nodes, the group of this jobtitle needs to 
         // be added with as nodes the given node.nodes.
         else if(group === undefined){
-            groupedNodes.set(node.jobtitle, {jobtitle: node.jobtitle, nodes: node.nodes})
+            groupedNodes.set(node.jobtitle, {id: node.jobtitle, jobtitle: node.jobtitle, nodes: node.nodes})
             this.maxNodes = this.maxNodes > node.nodes.length ? this.maxNodes : node.nodes.length;
         }
         // If node.nodes is undefined but there is a group, this node needs to be pushed to the group. 
@@ -452,7 +447,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 edges: new Array(edge),
                 source: source,
                 target: target,
-                nr: edge.nr
+                nr: edge.nr,
+                highlighted: false,
             });                
         }    
         // If there is an edge with the given source and target in the groupedEdges map and no edges array on the current edge,
@@ -531,14 +527,14 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 return this.scale(node.jobtitle);
             })
             
-            // .on("mouseover", (d, i) => {
-            //     this.main.visualizer.mouseOverNode(i.id);
-            // })
-            // .on('mouseout', (d, i) => {
-            //     this.main.visualizer.mouseOutNode(i.id);
-            // })
+            .on("mouseover", (event, node) => {
+                this.mouseOverNode(node);
+            })
+            .on('mouseout', (event, node) => {
+                this.mouseOutNode(node);
+            })
             .on('mouseup', (event, node) => {
-                this.mouseOutNode(node)
+                this.mouseUpNode(node)
             })
             .on('mousedown', (event, node) => {
                 this.mouseDownNode(event, node);
@@ -558,48 +554,55 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.update();
     }
 
-    mouseOverNode(person){
-        // //Get the location of the selected person in the nodes array
-        // let nodeIndex = this.personsIndex.get(id);
-        // //Set highlighted to true
-        // this.nodes[nodeIndex].highlighted = true;
-
-        super.mouseOverNode();
+    mouseOverNode(node){
+        //Nothing needs to happen right now
+        // this.selectEdges(node);
     }
 
-    mouseOutNode(person){
-        //Get the location of the selected person in the nodes array
-        // let nodeIndex = this.personsIndex.get(id);
-        // //Set highlighted to false
-        // this.nodes[nodeIndex].highlighted = false;
-        
-        for(let i = 0; i < this.edgesToHighlight.length; i++){
-            let edge = this.groupedEdges.get(this.edgesToHighlight[i]);
-            // console.log(edge);
-            edge.highlighted = false;
-        }
-
-        this.edgesToHighlight = [];
+    mouseOutNode(node){
+        this.deselectEdges();
     }
 
     mouseDownNode(event, node){
         if(event.shiftKey && this.groupOnJobtitle){
-            if(this.groupedJobtitles.has(node.jobtitle)){
-                // console.log('delete jobtitle: ', node.jobtitle)
-                this.groupedJobtitles.delete(node.jobtitle);
-            } else{
-                // console.log('add jobtitle: ', node.jobtitle)
-
-                this.groupedJobtitles.add(node.jobtitle);
-            }
-            console.log(this.groupedJobtitles);
-            this.createNodesGroup();
-            this.createEdgesGroup();
-            this.update();
-            return;
+            this.groupNode(node);
         }
-        
+        else{
+            this.selectNode(node);
+        }        
+    }
 
+    mouseUpNode(node){
+        this.deselectEdges();
+    }
+
+    addSelectedNode(node){
+        if(!this.main.dataHandler.personIsSelected(node)){
+            this.main.dataHandler.addSelectedPerson(node);
+            this.clickedNodes.set(node.id, node);
+
+        } 
+        else {
+            this.main.dataHandler.removeSelectedPerson(node);
+            this.clickedNodes.delete(node.id) 
+        }     
+
+    }
+
+    groupNode(node){
+        if(this.groupedJobtitles.has(node.jobtitle)){
+            this.groupedJobtitles.delete(node.jobtitle);
+        } 
+        else{
+            this.groupedJobtitles.add(node.jobtitle);
+        }
+        console.log(this.groupedJobtitles);
+        this.createNodesGroup();
+        this.createEdgesGroup();
+        this.update();
+    }
+
+    selectNode(node){
         if(node.nodes === undefined){
             this.addSelectedNode(node)
         }
@@ -607,36 +610,30 @@ export default class NodeLinkDiagramComponent extends Visualization {
             for(let singleNode of node.nodes){
                 this.addSelectedNode(singleNode)
             }
-        } 
+        }
+
+        this.selectEdges(node);
+
         this.main.visualizer.changeSelection();
     }
 
-    addSelectedNode(node){
-        if(!this.main.dataHandler.personIsSelected(node)){
-            this.main.dataHandler.addSelectedPerson(node);
-            this.clickedNodes.set(node.id, node);
-            let adjacentEmails = this.main.dataHandler.getEmailsForPerson(node.id);
+    selectEdges(node){
 
-            for(let i = 0; i < adjacentEmails.length; i++){
-                this.edgesToHighlight.push(adjacentEmails[i].fromId + '.' + adjacentEmails[i].toId);       
-            }
-        } 
-        else {
-            this.main.dataHandler.removeSelectedPerson(node);
-            this.clickedNodes.delete(node.id) 
-        }     
+        let adjacentEdges = this.edges.filter(edge => edge.source.id === node.id || edge.target.id === node.id);
+
+        for(let edge of adjacentEdges){
+            this.edgesToHighlight.push(edge.source.id + '.' + edge.target.id);       
+            this.groupedEdges.get(edge.source.id + '.' + edge.target.id).highlighted = true;
+        }
     }
-
-    mouseUpNode(person){
-        // For now just emptying the array works just fine, however in the future this might not be the best  idea
-
+    
+    deselectEdges(){
         for(let i = 0; i < this.edgesToHighlight.length; i++){
             let edge = this.groupedEdges.get(this.edgesToHighlight[i]);
             edge.highlighted = false;
         }
 
         this.edgesToHighlight = [];
-        super.mouseUpNode();
     }
 
     // Finds node within x and y coordinates
