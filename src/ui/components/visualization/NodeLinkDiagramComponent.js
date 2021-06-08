@@ -205,7 +205,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // .strength(link => (link.nr/this.maxNr)*this.linkForce.amountBonus + linkStrength);
         .strength(edge => weightScale(edge.nr));
 
-        console.log('edges:', this.edges)
+        // console.log('edges:', this.edges)
 
         // Change the strength of a link relative to the number of emails in that link
 
@@ -358,9 +358,9 @@ export default class NodeLinkDiagramComponent extends Visualization {
         }   
 
         this.nodes = Array.from(groupedNodes.values())
-        console.log('this.nodes:', groupedNodes);
+        // console.log('this.nodes:', groupedNodes);
 
-        console.log('this.nodes:', this.nodes);
+        // console.log('this.nodes:', this.nodes);
 
     }
 
@@ -417,7 +417,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             this.checkEdgeForGroup(edge);
         }
         this.edges = Array.from(this.groupedEdges.values());
-        console.log('this.edges: ', this.edges)
+        // console.log('this.edges: ', this.edges)
     }
 
     /**
@@ -574,7 +574,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // this.nodes[nodeIndex].highlighted = false;
         
         for(let i = 0; i < this.edgesToHighlight.length; i++){
-            let edge = this.mailMap.get(this.edgesToHighlight[i]);
+            let edge = this.groupedEdges.get(this.edgesToHighlight[i]);
+            // console.log(edge);
             edge.highlighted = false;
         }
 
@@ -584,10 +585,10 @@ export default class NodeLinkDiagramComponent extends Visualization {
     mouseDownNode(event, node){
         if(event.shiftKey && this.groupOnJobtitle){
             if(this.groupedJobtitles.has(node.jobtitle)){
-                console.log('delete jobtitle: ', node.jobtitle)
+                // console.log('delete jobtitle: ', node.jobtitle)
                 this.groupedJobtitles.delete(node.jobtitle);
             } else{
-                console.log('add jobtitle: ', node.jobtitle)
+                // console.log('add jobtitle: ', node.jobtitle)
 
                 this.groupedJobtitles.add(node.jobtitle);
             }
@@ -630,7 +631,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // For now just emptying the array works just fine, however in the future this might not be the best  idea
 
         for(let i = 0; i < this.edgesToHighlight.length; i++){
-            let edge = this.mailMap.get(this.edgesToHighlight[i]);
+            let edge = this.groupedEdges.get(this.edgesToHighlight[i]);
             edge.highlighted = false;
         }
 
