@@ -62,8 +62,8 @@ export default class DataHandler {
      * @param {string} csvData  A string with the data of a csv file with as first line the expected variable 
      */
     add(name, csvData) {
-        const raw = this.csvConverter(csvData)
-        this.data.push(...this.formatData(raw, name))
+        const raw = this.csvConverter(csvData);
+        this.data = this.data.concat(this.formatData(raw, name));
         this.data = this.sortByDate("all");
 
         this.update();
