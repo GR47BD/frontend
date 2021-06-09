@@ -1,6 +1,7 @@
 import m from "mithril";
 import * as d3 from "d3";
 import Visualization from "@/visualize/Visualization";
+import { group, select } from "d3";
 
 
 export default class NodeLinkDiagramComponent extends Visualization {
@@ -28,7 +29,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
         }
 
         this.collideForce = {
-            radius: 20,
+            minRadius: 18,
+            maxRadius: 45,
             strength: 0.9,
             iterations: 10
         }
@@ -42,12 +44,15 @@ export default class NodeLinkDiagramComponent extends Visualization {
             strokeWidth: 0.5,
             highlightedStrokeWidth: 2,
             basis: 0.2,
-            amountBonus: 0.4
+            amountBonus: 0.4,
+            defaultStroke: (alpha) => `rgba(0,0,0,${alpha})`,
+            highlightedStroke: (alpha) => `rgba(255,100,0,${alpha})`
         }
 
         this.nodeOptions = {
             minRadius: 5,
-            maxRadius: 30
+            maxRadius: 35,
+            selectedFill: '#000000'
         }
 
         this.simulationSettings = {
@@ -56,7 +61,13 @@ export default class NodeLinkDiagramComponent extends Visualization {
             alphaDecay: 0.05            
         }
 
-        this.maxNodes = 0;
+        
+
+        this.maxNrNodes = 0;
+        this.maxNrEdges = 0;
+
+        this.nodes = [];
+        this.edges = [];
 
         this.edgesToHighlight = []
         this.jobtitles = [];
@@ -77,11 +88,10 @@ export default class NodeLinkDiagramComponent extends Visualization {
     }
 
     oncreate() {
+
         if(!this.main.visualizer.getVisualization('NodeLinkDiagram')) {
 			this.main.visualizer.addVisualization('NodeLinkDiagram', this);
 		}
-
-		if(this.main.dataHandler.data.length === 0) return;
 
         let node_link_diagram = d3.select('#node_link_diagram');
         this.svg = node_link_diagram.append('svg')
@@ -120,61 +130,48 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.simulation = d3.forceSimulation()
             .force('link', d3.forceLink().id(node => {return node.id}))
             .force("center", d3.forceCenter(this.centerForce.x, this.centerForce.y).strength(this.centerForce.strength))
-            .force('collide', d3.forceCollide(d => this.collideForce.radius)
-                .strength(this.collideForce.strength)
-                .iterations(this.collideForce.iterations))
                 .tick(this.forces.ticks);
 
         this.simulation.alphaTarget(this.simulationSettings.alphaTarget).alphaDecay(this.simulationSettings.alphaDecay).velocityDecay(0.5);
         
 
-        this.update(true);
-    }
+        this.drawnEdges = this.svg.select('.edge').selectAll('line');
+        this.drawnNodes = this.svg.select('.node').selectAll('circle');
 
-    brushed({selection}){
-        this.usingBrushTool = true
-        if(selection) this.searchNodesInRectangle(selection);
-        else {
-            console.log("selection empty")
-        }
+        // this.update(true);
     }
 
     step(firstRun = false) {
         this.update(firstRun);
     } 
 
-    update(firstRun = false){
+    /**
+     * This function updates the visualization.
+     * @param {boolean} recalculateForces defines if the simulation needs to be calculated fully again. Defaults to false.
+     */
+    update(recalculateForces = false){
 		if(this.main.dataHandler.data.length === 0) return;
-        if(!firstRun && this.nodes === undefined) return this.oncreate();
+        if(this.simulation === undefined) return this.oncreate();
+        
+        //If recalculate forces is equal to true then the datachangedAmunt should be 1 else it will be based on the datahandler.
+        let dataChangedAmount = recalculateForces ? 1 : this.main.dataHandler.dataChangedAmount;          
 
-        let dataChangedAmount = this.main.dataHandler.dataChangedAmount;
-
-        if(firstRun){
-            this.drawnEdges = this.svg.select('.edge').selectAll('line');
-            this.drawnNodes = this.svg.select('.node').selectAll('circle');
-            dataChangedAmount = 1;
-            const persons = this.main.dataHandler.getPersons();
-
-            this.nodes = persons.map(person => {
-                return {
-                    id: person.id,
-                    jobtitle: person.jobtitle,
-                    name: this.main.dataHandler.emailToName(person.email),
-                    highlighted: false
-                }
-            });
-        }        
-
+        //If the data has changed in the datahandler the data should be updated
         if(this.main.dataHandler.dataChanged){
+            console.log('dataChanged')
             this.updateData(dataChangedAmount);
         }  
 
-        // Make sure all edges that should be highlighted get highlighted
-        // for(let i = 0; i < this.edgesToHighlight.length; i++){
-        //     let edge = this.mailMap.get(this.edgesToHighlight[i]);
-        //     edge.highlighted = true;
-        // }
+        this.updateSimulation(dataChangedAmount);    
+        this.updateForces();
+        super.update();
+    }
 
+    /**
+     * This function updates the simulation with the correct new data
+     * @param {float} dataChangedAmount a value between 0 and 1 of how much the data has changed in the new update.
+     */
+    updateSimulation(dataChangedAmount){
         // Set edge data
         // Remove any old edges drawn on the DOMvc
         this.drawnEdges.data(this.edges).exit().remove();
@@ -189,26 +186,28 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // Create new nodes if needed
         this.drawnNodes.data(this.nodes).enter().append('circle');
 
-        const linkStrength = this.linkForce.basis - (this.edges.length / this.linkForce.divider) * this.linkForce.penalty;
-        const centerStrength = this.centerForce.basis - (this.edges.length / this.centerForce.divider) * this.centerForce.penalty;
+        this.drawnNodes = this.svg.select('.node').selectAll('circle');
+        this.drawnEdges = this.svg.select('.edge').selectAll('line');
 
-        this.simulation.force('link').links(this.edges); 
+        //The events and classes only need to be set once hence we do it here instead of in updateDrawnNodes() or updateDrawnEdges
+        this.drawnNodes.on("mouseover", (event, node) => {
+                this.mouseOverNode(node);
+            })
+            .on('mouseout', (event, node) => {
+                this.mouseOutNode(node);
+            })
+            .on('mouseup', (event, node) => {
+                this.mouseUpNode(node)
+            })
+            .on('mousedown', (event, node) => {
+                this.mouseDownNode(event, node);
+            })
+            .attr('class', 'node')
+
+        this.drawnEdges.attr('class', '.edge');
 
 
-        let weightScale = d3.scaleLinear().domain(d3.extent(this.edges, (edge) => this.maxNr - edge.nr)).range([.1, 2])
-        this.simulation.force('link')
-        // .strength(link => (link.nr/this.maxNr)*this.linkForce.amountBonus + linkStrength);
-        .strength(edge => weightScale(edge.nr));
-
-        // console.log('edges:', this.edges)
-
-        // Change the strength of a link relative to the number of emails in that link
-
-        
-        this.simulation.force('center').strength(centerStrength);
-                
-        if(this.main.dataHandler.dataChanged){
-            
+        if(this.main.dataHandler.dataChanged){            
             let newAlpha = (dataChangedAmount * (0.7 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget;
             let resetSimulationThreshold = 0.01;
             if(this.simulationSettings.alphaTarget - newAlpha > resetSimulationThreshold){
@@ -216,23 +215,45 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 this.simulation.alpha(newAlpha);
                 
             }
-            this.simulation.restart();           
-
+            this.simulation.restart();        
         } 
-        
+
         this.simulation.on('tick', () => {
             // console.log(this.simulation.alpha());
             if(this.simulation.alpha() <= this.simulationSettings.alphaTarget + 0.001){
                 // this.simulation.stop();
             }       
 
-            this.updateDrawnNodes(this.main.dataHandler.dataChanged);
-            this.updateDrawnEdges(this.main.dataHandler.dataChanged);
+            this.updateDrawnNodes();
+            this.updateDrawnEdges();
         });
-        
-        super.update();
     }
 
+    /**
+     * This function updates all forces for the simulation that are based on changing variables.
+     */
+    updateForces(){
+        const linkStrength = this.linkForce.basis - (this.edges.length / this.linkForce.divider) * this.linkForce.penalty;
+        const centerStrength = this.centerForce.basis - (this.edges.length / this.centerForce.divider) * this.centerForce.penalty;
+
+        this.simulation.force('link').links(this.edges); 
+
+
+        let weightScale = d3.scaleLinear().domain(d3.extent(this.edges, (edge) => this.maxNrEdges - edge.nr)).range([.1, 2])
+        this.simulation.force('link').strength(edge => weightScale(edge.nr));
+
+        this.simulation.force('center').strength(centerStrength)
+        this.simulation.force('collide', d3.forceCollide(node => {
+                    if(node.nodes === undefined) return this.collideForce.minRadius;
+                    else return this.normalizeValue(node.nodes.length, this.maxNrNodes, this.collideForce.minRadius, this.collideForce.maxRadius);
+                })
+                .strength(this.collideForce.strength)
+                .iterations(this.collideForce.iterations));
+
+    }
+    /**
+     *  This function updates the data used by this visualization
+     */
     updateData(dataChangedAmount){
         this.updateNodes(true);
         this.updateEdges();  
@@ -244,44 +265,46 @@ export default class NodeLinkDiagramComponent extends Visualization {
             this.createNodesGroup();
             this.createEdgesGroup();
         }
-
+  
         let newAlpha = (dataChangedAmount * (0.5 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget;
         this.simulation.alpha(newAlpha);
     }
 
-    compareLists(list1, list2, isUnion = false){
-        return list1.filter((set => a => isUnion === set.has(a.id))(new Set(list2.map(b => b.id))));
-    }
+    /**
+     * This function updates the data of the nodes by getting the new data from the datahandler class and comparing it to the 
+     * data already available in the visualization. It then uses union and intersection to get an array with the data that 
+     * needs to be kept and the data that needs to be added.
+     */
+    updateNodes(){
+        const persons = this.main.dataHandler.getPersons();
+        
+        let newNodes = [];
 
-    updateNodes(fromDatahandler){
+        this.nodes = this.compareLists(this.nodes, persons, true);
+        newNodes = this.compareLists(persons, this.nodes);
 
-        if(fromDatahandler){
-            const persons = this.main.dataHandler.getPersons();
-
-            this.nodes = this.compareLists(this.nodes, persons, true);
-            let newNodes = this.compareLists(persons, this.nodes);
-    
-            newNodes = newNodes.map(node => {
-                return {
-                    id: node.id,
-                    jobtitle: node.jobtitle,
-                    name: persons.find(person => person.email === node.email),
-                    highlighted: false,
-                    x: this.dimensions.width / 2,
-                    y: this.dimensions.height / 2
-                }
-            })
-    
-            this.nodes.push(...newNodes);            
-    
-            this.personsIndex = new Map();
-            for(let i = 0; i < this.nodes.length; i++){
-                this.personsIndex.set(this.nodes[i].id, i);
+        newNodes = newNodes.map(node => {
+            return {
+                id: node.id,
+                jobtitle: node.jobtitle,
+                name: persons.find(person => person.email === node.email),
+                highlighted: false,
+                x: this.dimensions.width / 2,
+                y: this.dimensions.height / 2
             }
-        }
+        })
 
+        this.nodes.push(...newNodes);            
+
+        this.personsIndex = new Map();
+        for(let i = 0; i < this.nodes.length; i++){
+            this.personsIndex.set(this.nodes[i].id, i);
+        }
     }
 
+    /**
+     * This function updates the data of the edges by getting new data from the datahandler and mapping it to the right data structure
+     */
     updateEdges(){
         // emails of current timeframe
         let emails = this.main.dataHandler.getEmails();
@@ -305,9 +328,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             }
         });
 
-
         // this.removeDuplicateEdges
-
     }
 
     /**
@@ -317,7 +338,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
      **/    
     removeDuplicateEdges(){
         this.mailMap = new Map();
-        this.maxNr = 0;
+        this.maxNrEdges = 0;
         
         for(const email of this.edges) {
             const key = email.source + "." + email.target;
@@ -325,11 +346,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
             if(mapValue === undefined) {
                 this.mailMap.set(key, email);
-                this.maxNr = 1;
+                this.maxNrEdges = 1;
             }
             else {
                 mapValue.nr += 1;
-                this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;
+                this.maxNrEdges = mapValue.nr > this.maxNrEdges ? mapValue.nr : this.maxNrEdges;
             }
         }
 
@@ -341,7 +362,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
      */
     createNodesGroup(){
         let groupedNodes = new Map();
-        this.maxNodes = 0;
+        this.maxNrNodes = 0;
 
         for(let node of this.nodes){
             if(this.groupedJobtitles.has(node.jobtitle)){
@@ -370,19 +391,26 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // If there is no group in the groupedNodes with the jobtitle of the node yet, 
         // there needs to be added a group of this jobtitle with as nodes an array with the current node.
         if(group === undefined && node.nodes === undefined){
-            groupedNodes.set(node.jobtitle, {id: node.jobtitle, jobtitle: node.jobtitle, nodes: new Array(node)})
-            this.maxNodes = 1;
+            groupedNodes.set(node.jobtitle, 
+                {
+                    id: node.jobtitle, 
+                    jobtitle: node.jobtitle, 
+                    x: this.dimensions.width / 2, 
+                    y: this.dimensions.height / 2, 
+                    groupIsSelected: false,  
+                    nodes: new Array(node)
+                })
         }  
         // If there is no group but there are nodes in node.nodes, the group of this jobtitle needs to 
         // be added with as nodes the given node.nodes.
         else if(group === undefined){
-            groupedNodes.set(node.jobtitle, {id: node.jobtitle, jobtitle: node.jobtitle, nodes: node.nodes})
-            this.maxNodes = this.maxNodes > node.nodes.length ? this.maxNodes : node.nodes.length;
+            groupedNodes.set(node.jobtitle, {id: node.jobtitle, jobtitle: node.jobtitle, x: node.x, y: node.y, groupIsSelected: node.groupIsSelected, nodes: node.nodes})
+            this.maxNrNodes = this.maxNrNodes > node.nodes.length ? this.maxNrNodes : node.nodes.length;
         }
         // If node.nodes is undefined but there is a group, this node needs to be pushed to the group. 
         else if(node.nodes === undefined) {
                 group.nodes.push(node)
-                this.maxNodes = this.maxNodes > group.nodes.length ? this.maxNodes : group.nodes.length;
+                this.maxNrNodes = this.maxNrNodes > group.nodes.length ? this.maxNrNodes : group.nodes.length;
         }
     }
     /**
@@ -407,12 +435,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
      */
     createEdgesGroup(){
         this.groupedEdges = new Map();
-        this.maxNr = 0;
+        this.maxNrEdges = 0;
         for(const edge of this.edges){
             this.checkEdgeForGroup(edge);
         }
         this.edges = Array.from(this.groupedEdges.values());
-        // console.log('this.edges: ', this.edges)
     }
 
     /**
@@ -456,7 +483,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         else if(edge.edges === undefined) {
             mapValue.edges.push(edge)
             mapValue.nr += 1;
-            this.maxNr = mapValue.nr > this.maxNr ? mapValue.nr : this.maxNr;                    
+            this.maxNrEdges = mapValue.nr > this.maxNrEdges ? mapValue.nr : this.maxNrEdges;                    
         }
         // If edge.edges is defined it is already a group, so each value of the group needs to be checked again and added to
         // the right group with the function checkEdgeForGroup so there happens recursion here. 
@@ -467,8 +494,53 @@ export default class NodeLinkDiagramComponent extends Visualization {
         }            
     }     
 
-    updateDrawnEdges(firstRun) {
-        this.drawnEdges = this.svg.select('.edge').selectAll('line');
+    updateDrawnNodes() {
+        this.drawnNodes.attr('r', (node) => node.nodes === undefined ? 
+                    this.nodeOptions.minRadius : this.normalizeValue(node.nodes.length, this.maxNrNodes, this.nodeOptions.minRadius, this.nodeOptions.maxRadius)) 
+            .attr('cx', (d) => {
+                return d.x 
+            })
+            .attr('cy', (d) => {
+                return d.y 
+            })
+            .attr('fill', (node) => {
+                // let selected = false;
+                // if(this.main.dataHandler.personIsSelected(super.nodeToPersonObject(node))){
+                //     selected = true;
+                // }                
+                // else if(node.nodes != undefined){
+                //     selected = true;
+                //     for(let groupedNode of node.nodes){
+                //         if(!this.main.dataHandler.personIsSelected(groupedNode)){
+                //             selected = false;
+                //             break;
+                //         }
+                //     }
+                // }
+                // return selected ? this.nodeOptions.selectedFill : this.scale(node.jobtitle);
+
+                let selected = node.nodes === undefined ? this.main.dataHandler.personIsSelected(node) : this.isGroupSelected(node);
+                return selected ? this.nodeOptions.selectedFill : this.scale(node.jobtitle);
+            })
+    }    
+
+    isGroupSelected(node){
+        // let selected = false;
+        // if(node.groupIsSelected) selected = true;
+        // else{
+          let  selected = true;
+                for(let groupedNode of node.nodes){
+                    if(!this.main.dataHandler.personIsSelected(groupedNode)){
+                        selected = false;
+                        break;
+                    }
+                }
+        // }
+        node.groupIsSelected = selected;
+        return selected;        
+    }
+
+    updateDrawnEdges() {
 
         this.drawnEdges.attr('x1', (edge) => {
                 return edge.source.x;
@@ -483,71 +555,13 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 return edge.target.y;
             })
             .attr('stroke', edge => {
-                const alpha = (this.edgeOptions.amountBonus * edge.nr / this.maxNr + this.edgeOptions.basis).toFixed(2);
-                // const alpha = 1;
-                if(edge.highlighted){
-                    return `rgba(255,100,0,${alpha})`;
-                }
-                return `rgba(0,0,0,${alpha})`;
+                const alpha = (this.edgeOptions.amountBonus * edge.nr / this.maxNrEdges + this.edgeOptions.basis).toFixed(2);
+                return edge.highlighted ? this.edgeOptions.highlightedStroke(alpha) : this.edgeOptions.defaultStroke(alpha);
+
             })
             .attr('stroke-width', edge => {
-                if(edge.highlighted) return this.edgeOptions.highlightedStrokeWidth;
-                else return this.edgeOptions.strokeWidth;
+                return edge.highlighted ? this.edgeOptions.highlightedStrokeWidth : this.edgeOptions.strokeWidth;
             })
-            .attr('class', '.edge');
-
-        if (firstRun) this.drawnEdges.attr('transform', `translate(${(this.dimensions.width) / 2},${(this.dimensions.height) / 2})`)
-        else this.drawnEdges.attr('transform', `translate(0,0)`)
-    }
-
-    updateDrawnNodes(firstRun) {
-        this.drawnNodes = this.svg.select('.node').selectAll('circle');
-        this.drawnNodes.attr('r', (node) => {
-            if(node.nodes === undefined) return this.nodeOptions.minRadius;
-            const normalized = (node.nodes.length) / (this.maxNodes)
-            return normalized * (this.nodeOptions.maxRadius - this.nodeOptions.minRadius) + this.nodeOptions.minRadius;
-
-        })
-            .attr('cx', (d) => {
-                return d.x 
-            })
-            .attr('cy', (d) => {
-                return d.y 
-            })
-            .attr('fill', (node) => {
-                if(this.main.dataHandler.personIsSelected(super.nodeToPersonObject(node))){
-                    return '#000000';
-                }                
-                else if(node.nodes != undefined){
-                    if(this.main.dataHandler.personIsSelected(node.nodes[0])){
-                        return '#000000';
-                    }
-                }
-
-                return this.scale(node.jobtitle);
-            })
-            
-            .on("mouseover", (event, node) => {
-                this.mouseOverNode(node);
-            })
-            .on('mouseout', (event, node) => {
-                this.mouseOutNode(node);
-            })
-            .on('mouseup', (event, node) => {
-                this.mouseUpNode(node)
-            })
-            .on('mousedown', (event, node) => {
-                this.mouseDownNode(event, node);
-            })
-            .attr('class', 'node')
-            .attr('stroke-width', (node) => {
-                if(node.nodes === undefined) return 1;
-
-                return node.nodes.length
-            });
-
-        if(firstRun) this.drawnNodes.attr('transform', `translate(${(this.dimensions.width) / 2},${(this.dimensions.height) / 2})`)
-        else this.drawnNodes.attr('transform', `translate(0,0)`)
     }
 
     changeSelection(){
@@ -556,7 +570,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     mouseOverNode(node){
         //Nothing needs to happen right now
-        // this.selectEdges(node);
     }
 
     mouseOutNode(node){
@@ -568,7 +581,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             this.groupNode(node);
         }
         else{
-            this.selectNode(node);
+            this.toggleNodeSelection(node);
         }        
     }
 
@@ -577,16 +590,13 @@ export default class NodeLinkDiagramComponent extends Visualization {
     }
 
     addSelectedNode(node){
-        if(!this.main.dataHandler.personIsSelected(node)){
-            this.main.dataHandler.addSelectedPerson(node);
-            this.clickedNodes.set(node.id, node);
+        this.main.dataHandler.addSelectedPerson(node);
+        this.clickedNodes.set(node.id, node);
+    }
 
-        } 
-        else {
-            this.main.dataHandler.removeSelectedPerson(node);
-            this.clickedNodes.delete(node.id) 
-        }     
-
+    removeSelectedNode(node){
+        this.main.dataHandler.removeSelectedPerson(node);
+        this.clickedNodes.delete(node.id) 
     }
 
     groupNode(node){
@@ -596,29 +606,31 @@ export default class NodeLinkDiagramComponent extends Visualization {
         else{
             this.groupedJobtitles.add(node.jobtitle);
         }
-        console.log(this.groupedJobtitles);
         this.createNodesGroup();
         this.createEdgesGroup();
-        this.update();
+        this.update(false, true);
     }
 
-    selectNode(node){
+    toggleNodeSelection(node){
         if(node.nodes === undefined){
-            this.addSelectedNode(node)
+            if(!this.main.dataHandler.personIsSelected(node)) this.addSelectedNode(node);
+            else this.removeSelectedNode(node);
         }
-        else{
+        else{            
             for(let singleNode of node.nodes){
-                this.addSelectedNode(singleNode)
+                if(node.groupIsSelected) this.removeSelectedNode(singleNode);
+                else if(!this.main.dataHandler.personIsSelected(singleNode)) this.addSelectedNode(singleNode)
             }
+
+            node.groupIsSelected = !node.groupIsSelected;
         }
 
         this.selectEdges(node);
-
+        
         this.main.visualizer.changeSelection();
     }
 
     selectEdges(node){
-
         let adjacentEdges = this.edges.filter(edge => edge.source.id === node.id || edge.target.id === node.id);
 
         for(let edge of adjacentEdges){
@@ -634,6 +646,14 @@ export default class NodeLinkDiagramComponent extends Visualization {
         }
 
         this.edgesToHighlight = [];
+    }
+
+    brushed({selection}){
+        this.usingBrushTool = true
+        if(selection) this.searchNodesInRectangle(selection);
+        else {
+            console.log("selection empty")
+        }
     }
 
     // Finds node within x and y coordinates
@@ -657,6 +677,13 @@ export default class NodeLinkDiagramComponent extends Visualization {
             this.main.dataHandler.addSelectedPerson(super.nodeToPersonObject(node));
         }
     }
+
+    //This function can be used to get the union or the intersection between two arrays
+    compareLists = (list1, list2, isUnion = false) => list1.filter((set => a => isUnion === set.has(a.id))(new Set(list2.map(b => b.id))));
+
+    //This function can be used to normalize a value
+    normalizeValue = (amount, maxAmount, minValue, maxValue) => (amount) / (maxAmount) * (maxValue - minValue) + minValue;
+
 
     view() {
         return (
