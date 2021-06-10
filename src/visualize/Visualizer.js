@@ -35,6 +35,7 @@ export default class Visualizer {
 
     update() {
         if(this.main.timebar) this.main.timebar.update();
+        if(this.main.statistics) this.main.statistics.update();
 
         for(const visualization of this.visualizations.values()) {
             visualization.update();
@@ -43,6 +44,7 @@ export default class Visualizer {
 
     step() {
         if(this.main.timebar) this.main.timebar.update();
+        if(this.main.statistics) this.main.statistics.update();
 
         for(const visualization of this.visualizations.values()) {
             visualization.step();

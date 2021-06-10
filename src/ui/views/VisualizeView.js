@@ -5,6 +5,7 @@ import DrawerComponent from "@/ui/components/drawer/DrawerComponent";
 import VisualizationContainerComponent from "@/ui/components/visualization/VisualizationContainerComponent";
 import UploadButtonComponent from "@/ui/components/UploadButtonComponent";
 import ApplyFilterComponent from "@/ui/components/ApplyFilterComponent";
+import StatisticsComponent from "../components/StatisticsComponent";
 
 export default class VisualizeView {
     view(vnode) {
@@ -27,7 +28,7 @@ export default class VisualizeView {
 							<UploadButtonComponent main={main}></UploadButtonComponent>
 						</DrawerComponent>
 						<DrawerComponent right={true} topless={true} id="statistics-drawer">
-
+							<StatisticsComponent main={main}></StatisticsComponent>
 						</DrawerComponent>
 					</DrawerContainerComponent>
 				</div>

@@ -5,11 +5,12 @@
 $menubar-height: 120px;
 $back-col: #d3d6db;
 $menu-back-col:#24252a;
-$text-col: black;
+$text-col: white;
 $container-col: #393e46;
 $f-family: "Montserrat", sans-serif;
 $margin-container: 0px;
 $main-color:rgba(0, 136, 169, 0.8);
+$border-radius: 8px;
 
 body {
 	margin: 0;
@@ -107,8 +108,8 @@ body {
 		width: 100%;
 
 		margin-bottom: 10px;
-		border-top-right-radius: 10px;
-		border-bottom-right-radius: 10px;
+		border-top-right-radius: $border-radius;
+		border-bottom-right-radius: $border-radius;
 
 		&:last-child {
 			margin-bottom: $margin-container;
@@ -133,10 +134,15 @@ body {
 
 				svg {
 					fill: white;
+					transition: .3s fill;
 				}
 
 				&.open {
 					transform: rotate(180deg);
+				}
+
+				&:hover svg {
+					fill: darken($text-col, 20%);
 				}
 			}
 		}
@@ -174,14 +180,32 @@ body {
 		padding: 10px 0 10px 10px;
 
 		.drawer {
-			border-top-left-radius: 10px;
-			border-bottom-left-radius: 10px;
+			border-top-left-radius: $border-radius;
+			border-bottom-left-radius: $border-radius;
 			border-top-right-radius: 0;
 			border-bottom-right-radius: 0;
 		}
 
 		&.closed {
 			margin-right: -210px;
+		}
+	}
+}
+
+.statistics {
+	.header {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+
+		.title {
+			line-height: 22px;
+		}
+	}
+
+	.content2 {
+		.highlight {
+			font-style: italic;
 		}
 	}
 }
@@ -201,10 +225,23 @@ body {
 
 .visualization-panel {
 	font-family: $f-family;
-	width: 100%;
+	background: $menu-back-col;
+	border-radius: $border-radius;
+	flex-grow: 1;
+	padding: 10px;
+	color: $text-col;
+	margin-bottom: 20px;
+
+	.content {
+		margin-top: 10px;
+	}
 
 	&.half {
-		width: 50%;
+		flex-grow: 2;
+
+		&:first-child {
+			margin-right: 20px;
+		}
 	}
 }
 
@@ -214,10 +251,34 @@ body {
 	width: 100%;
 	height: 120px;
 	align-items: center;
-	background: $back-col;
+	background: $container-col;
+	margin-bottom: 20px;
+	color: $text-col;
+	border-radius: $border-radius;
+
+	svg {
+		fill: $text-col;
+		transition: .3s fill;
+		cursor: pointer;
+
+		&:hover {
+			fill: darken($text-col, 20%);
+		}
+	}
 
 	.dates {
 		padding: 16px 32px;
+
+		.row {
+			display: flex;
+			flex-direction: row;
+			justify-content: space-between;
+
+			.text {
+				text-transform: capitalize;
+				margin-right: 10px;
+			}
+		}
 	}
 
 	.buttons {
