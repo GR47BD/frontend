@@ -161,8 +161,8 @@ export default class DataHandler {
     updateTimed(timedOnly = false) {
         this.dataChanged = true;
 
-        let newFirstIndex = 0;
-        let newLastIndex = 0;
+        let newFirstIndex = this.firstIndex;
+        let newLastIndex = this.lastIndex;
 
         if(this.filteredData[this.firstIndex].date.getTime() < this.timeSpan.startTime) {
             for(let i = this.firstIndex; i < this.lastIndex; i++) {

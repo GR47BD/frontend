@@ -45,7 +45,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             highlightedStrokeWidth: 2,
             basis: 0.2,
             amountBonus: 0.4,
-            defaultStroke: (alpha) => `rgba(0,0,0,${alpha})`,
+            defaultStroke: (alpha) => `rgba(70,130,180,${alpha})`,
             highlightedStroke: (alpha) => `rgba(255,100,0,${alpha})`
         }
 
