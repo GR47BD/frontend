@@ -321,24 +321,31 @@ body {
 	}
 
 	&.target {
-		fill: rgb(211, 123, 123);
+		fill: rgb(153, 32, 32);
 		font-weight: bolder;
 	}
 
 	&.source {
-		fill: rgb(9, 37, 9);
+		fill: rgb(22, 136, 22);
 		font-weight: bolder;
 	}
 
 	&.both {
-		fill: rgba(65, 3, 54, 0.835);
+		fill: rgba(218, 126, 7, 0.835);
 		font-weight: bolder;
 	}
 
-	.hier-node:hover {
-		font-weight: bolder;
-		cursor: pointer;
-	}
+}
+
+.hier-node:hover {
+	font-weight: bolder;
+	cursor: pointer;
+}
+
+.hier-arc-text {
+	font-family: Helvetica;
+	font-weight: bold;
+	fill: white;
 }
 
 .massive-sequence-container {
