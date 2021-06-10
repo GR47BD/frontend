@@ -54,6 +54,17 @@ export default class DataHandler {
 
         // Boolean whether or not the data has changed since last iteration
         this.dataChanged = true;
+
+        this.emailDataTypes = [
+            {key: "sentiment", name: "Sentiment", type: "number"},
+            {key: "date", name: "Date", type: "date"}
+        ]
+
+        this.personsDataTypes = [
+            //{key: "id", name: "Id", type: "unqiue"},
+            //{key: "name", name: "Name", type: "unique"},
+            {key: "jobtitle", name: "Job title", type: "category"}
+        ]
     }
 
     /**
@@ -139,10 +150,8 @@ export default class DataHandler {
             if(filter.type === FilterTypes.GREATER && item[filter.column] <= filter.value) return false;
             if(filter.type === FilterTypes.INCLUDES && !filter.value.includes(item[filter.column])) return false;
         }
-        return true;
- 
 
-        
+        return true;
     }
 
     /**

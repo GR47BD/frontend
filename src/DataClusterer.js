@@ -8,8 +8,6 @@ export default class DataClusterer {
             distance: "braycurtis",
             permute: true
         }
-
-        this.main.options = this.options;
     }
 
     sortDataByClusters() {

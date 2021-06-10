@@ -1,10 +1,15 @@
 import m from "mithril";
 import noUiSlider from 'nouislider';
 
+const playSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M3 22v-20l18 10-18 10z"/></svg>`;
+const pauseSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M11 22h-4v-20h4v20zm6-20h-4v20h4v-20z"/></svg>`;
+const stopSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M2 2h20v20h-20z"/></svg>`;
+
 export default class TimebarComponent {
 	oninit(vnode) {
         this.main = vnode.attrs.main;
 		this.main.timebar = this;
+		this.playing = false;
     }
 
 	oncreate() {
@@ -101,11 +106,13 @@ export default class TimebarComponent {
 
 		const timebarPlayButton = document.getElementById("timebar-play");
 
-		if(timebarPlayButton.innerText === "Play") {
-			timebarPlayButton.innerText = "Pause";
+		if(this.playing) {
+			timebarPlayButton.innerHTML = playSvg;
+			this.playing = false;
 		}
 		else {
-			timebarPlayButton.innerText = "Play";
+			timebarPlayButton.innerHTML = pauseSvg;
+			this.playing = true;
 		}
 	}
 
@@ -133,8 +140,8 @@ export default class TimebarComponent {
 					<div id="timebar-slider"></div>
 				</div>
 				<div class="buttons">
-					<div class="button" id="timebar-play" onclick={() => this.togglePlayPause()}>Play</div>
-					<div class="button" id="timebar-stop" onclick={() => this.stop()}>Stop</div>
+					<div class="button" id="timebar-play" onclick={() => this.togglePlayPause()}>{m.trust(playSvg)}</div>
+					<div class="button" id="timebar-stop" onclick={() => this.stop()}>{m.trust(stopSvg)}</div>
 				</div>
 			</div>
         );

@@ -16,14 +16,31 @@ export default class MassiveSequenceComponent extends Visualization {
             number: 5
         }
 
+        this.styleOptions = {
+            gradient: {
+                use: false,
+                color1: "blue",
+                color2: "orange",
+                color3: "yellow"
+            },
+            color: "steelblue",
+            text: {
+                color: "lightgray",
+                hoverColor: "gray"
+            },
+            indicatorColor: "white"
+        }
+
         this.indicatorActive = false;
     }
 
+    // Is called when this component is initialized.
     oninit(vnode) {
         super.oninit(vnode);
         this.dataClusterer = new DataClusterer(this.main);
     }
 
+    // Is called when the component is created.
     oncreate() {
         this.main.visualizer.addVisualization('MassiveSequenceComponent', this);
 
@@ -45,16 +62,19 @@ export default class MassiveSequenceComponent extends Visualization {
         this.update();
     }
 
+    // Actives the mouse indicator.
     activateIndicator() {
         document.getElementById("massive-sequence-indicator").classList.remove("inactive");
         this.indicatorActive = true;
     }
 
+    // Deactivates the mouse indicator.
     deactivateIndicator() {
         document.getElementById("massive-sequence-indicator").classList.add("inactive");
         this.indicatorActive = false;
     }
 
+    // Is called with an x and y if the mouse is moved over the component.
     handleMouseMove(x, y) {
         if(x >= this.sizes.personsWidth && !this.indicatorActive) {
             this.activateIndicator();
@@ -63,16 +83,19 @@ export default class MassiveSequenceComponent extends Visualization {
             this.deactivateIndicator();
         }
 
+        // Change mouse indicator position when the indicator is active.
         if(this.indicatorActive) {
             const start = this.main.dataHandler.timeSpan.startTime;
             const end = this.main.dataHandler.timeSpan.endTime;
             const date = this.dateToString(this.approximateDate(start, end, (x-this.sizes.personsWidth)/(this.width-this.sizes.personsWidth)));
 
             document.getElementById("massive-sequence-indicator").style.left = `${x}px`;
+            document.getElementById("massive-sequence-indicator-line").style.background = this.styleOptions.indicatorColor;
             document.getElementById("massive-sequence-indicator-date").innerText = date;
         }
     }
 
+    // Is called by the visualizer when the data is stepped.
     step() {
         const startTime = new Date().getTime();
         const bounds = this.canvas.parentNode.getBoundingClientRect();
@@ -91,6 +114,7 @@ export default class MassiveSequenceComponent extends Visualization {
         console.log(`update in ${endTime-startTime}ms`);
     }
 
+    // Draws the persons part of the visualization.
     drawPersons() {
         for(const person of this.persons) {
             const y = this.order.get(person.id) * 2;
@@ -100,6 +124,7 @@ export default class MassiveSequenceComponent extends Visualization {
         }
     }
 
+    // Draws the dates part of the visualization
     drawDates(number) {
         const start = this.main.dataHandler.timeSpan.startTime;
         const end = this.main.dataHandler.timeSpan.endTime;
@@ -108,12 +133,13 @@ export default class MassiveSequenceComponent extends Visualization {
             const x = this.sizes.personsWidth + Math.round((this.width - this.sizes.personsWidth - 10) / (number - 1)) * i;
             const date = this.approximateDate(start, end, i/(number - 1));
             this.graphics.rotate(Math.PI/2);
-            this.graphics.fillStyle = this.hovering ? "gray" : "black";
+            this.graphics.fillStyle = this.hovering ? this.styleOptions.text.hoverColor : this.styleOptions.text.color;
             this.graphics.fillText(this.dateToString(date), this.height - this.sizes.dateHeight, -x);
             this.graphics.rotate(-Math.PI/2);
         }
     }
 
+    // Draws the view part of the visualization.
     drawView(x, y, width, height) {
         const emails = this.main.dataHandler.getEmails();
         const start = this.main.dataHandler.timeSpan.startTime;
@@ -126,26 +152,36 @@ export default class MassiveSequenceComponent extends Visualization {
             
             const edgeY = Math.min(y1, y2);
             const edgeHeight = Math.max(y1, y2) - edgeY;
-            /*const gradient = this.graphics.createLinearGradient(0, edgeY + y, 0, edgeHeight + edgeY + y);
-
-            if(y1 >= y2) {
-                gradient.addColorStop(0, "blue");
-                gradient.addColorStop(1, "yellow");
-            } 
-            else {
-                gradient.addColorStop(0, "yellow");
-                gradient.addColorStop(1, "blue");
-            }*/
 
             if(edgeX < 0) continue;
 
             this.graphics.globalAlpha = 0.2;
-            this.graphics.fillStyle = "blue";
+
+            if(this.styleOptions.gradient.use) {
+                const gradient = this.graphics.createLinearGradient(0, edgeY + y, 0, edgeHeight + edgeY + y);
+
+                if(y1 >= y2) {
+                    gradient.addColorStop(0, this.styleOptions.gradient.color1);
+                    gradient.addColorStop(0.5, this.styleOptions.gradient.color2);
+                    gradient.addColorStop(1, this.styleOptions.gradient.color3);
+                } 
+                else {
+                    gradient.addColorStop(0, this.styleOptions.gradient.color3);
+                    gradient.addColorStop(0.5, this.styleOptions.gradient.color2);
+                    gradient.addColorStop(1, this.styleOptions.gradient.color1);
+                }
+                this.graphics.fillStyle = gradient;
+            }
+            else {
+                this.graphics.fillStyle = this.styleOptions.color;
+            }
+            
             this.graphics.fillRect(x + edgeX, y + edgeY, 1, edgeHeight);
             this.graphics.globalAlpha = 1;
         }
     }
 
+    // Is called by the visualizer when the data is updated.
     update(){
         super.update();
 
@@ -157,24 +193,28 @@ export default class MassiveSequenceComponent extends Visualization {
         this.step();
     }
 
+    // Approximates the x value of the given date between a specified start and end date for a given width.
     approximateX(start, end, time, width) {
         return Math.round((time - start) / (end - start) * width);
     }
 
+    // Approximates the date value by interpolating the start and end date by the given percentile.
     approximateDate(start, end, percentile) {
         return new Date(Math.round((end - start) * percentile + start));
     }
 
+    // Converts a given date into a string.
     dateToString(date) {
         return `${date.getDate()}-${date.getMonth()}-${("" + date.getFullYear()).substring(2,4)}`;
     }
 
+    // Returns the html code for this component.
     view() {
         return (
             <div class="massive-sequence-container">
                 <canvas id='massive-sequence'></canvas>
                 <div class="indicator inactive" id="massive-sequence-indicator">
-                    <div class="line"></div>
+                    <div class="line" id="massive-sequence-indicator-line"></div>
                     <div class="date" id="massive-sequence-indicator-date">AB-AB-AB</div>
                 </div>
             </div>
