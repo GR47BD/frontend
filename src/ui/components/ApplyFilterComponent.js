@@ -13,8 +13,7 @@ export default class ApplyFilterComponent {
         const filterSelector = document.getElementById("filterSelector");
         filterButton.addEventListener("click", () => {
             this.pushFilters();
-            this.main.dataHandler.update(); 
-            this.main.visualizer.update();
+            this.updateVizualisation();
         });
         filterSelector.addEventListener("change", () => {
             let indexOf = filterSelector.selectedIndex;
@@ -30,18 +29,39 @@ export default class ApplyFilterComponent {
         let filterarray = this.main.dataHandler.filters;
         this.main.dataHandler.filters = filterarray.filter((filter) => {return !filter.options});
         for (let [key,value] of this.availableFilters) {
-            this.main.dataHandler.filters.push({type: 0, value: value.selectedFilters(), column: key, options: true});
+            if(value.selectedFilters().length === 0) continue;
+            this.main.dataHandler.filters.push({type: 3, value: value.selectedFilters(), column: key, options: true});
         }
 
     }
 
-    updateData() {
-        document.getElementById("filterSelector").hidden = false;
-        document.getElementById("initialText").remove();
+    removeFilterSelector(name) {
+        this.availableFilters.delete(name);
+        this.pushFilters();
+        this.hideButton();
+        this.updateVizualisation();
+    }
+
+    availableData(available = true) {
+        if (available) {
+           document.getElementById("filterSelector").hidden = false;
+           document.getElementById("initialText").hidden = true;
+        } else {
+
+        }
+    }
+
+    hideButton() {
+        if (this.availableFilters.size === 0) document.getElementById("filterButton").hidden = true;
     }
 
     updateButton() {
         document.getElementById("filterButton").hidden = false;
+    }
+
+    updateVizualisation() {
+        this.main.dataHandler.update(); 
+        this.main.visualizer.update();
     }
 
     addNewComponent(indexOf) {
@@ -49,11 +69,12 @@ export default class ApplyFilterComponent {
         let newDiv = document.createElement("div");
         newDiv.setAttribute("id", "base" + value);
         document.getElementById("baseFilter").appendChild(newDiv);
-        this.availableFilters.set(value, new MultiSelectorComponent(this.main, value));
+        this.availableFilters.set(value, new MultiSelectorComponent(this.main, value, indexOf));
         m.mount(newDiv, this.availableFilters.get(value));
     }
 
     hideOption(indexOf) {
+        const filterSelector = document.getElementById("filterSelector");
         filterSelector.options.selectedIndex = 0;
         filterSelector.options[indexOf].setAttribute("hidden", true);
     }

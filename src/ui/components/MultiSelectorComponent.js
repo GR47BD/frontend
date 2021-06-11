@@ -3,29 +3,24 @@ const m = require('mithril');
 export default class MultiSelectorComponent {
 
 
-    constructor(main, name) {
+    constructor(main, name, index) {
         this.main = main;
         this.name = name;
         this.purpose = this.main.dataHandler.getDataOfSelection(this.name);
+        this.index = index;
     }
 
     oncreate() {
         const selector = document.getElementById(this.name);
+        const button = document.getElementById(this.name+"_button");
+        const filterSelector = document.getElementById("filterSelector");
         this.purpose.forEach(x => { selector.innerHTML += " <option id='"+this.name+x+"'value='"+x+"'style='background-color:Tomato;'>"+x+"</option>"});
-    }
-
-    /* This function is used when the data uploaded changes
-    */
-    updateData() {
-        this.jobTitles = [];
-        this.jobTitles = this.main.dataHandler.getJobTitles();
-        const selector = document.getElementById("job");
-        selector.removeChild(document.getElementById("jobselector"));
-        let jobselector = document.createElement("select");
-        jobselector.setAttribute("multiple",true);
-        jobselector.setAttribute("id","jobselector");
-        selector.appendChild(jobselector);
-        this.jobTitles.map(x => { jobselector.innerHTML += " <option id='"+x+"'value='"+x+"'style='background-color:Tomato;'>"+x+"</option>"});    
+        button.addEventListener("click", () => {
+            filterSelector.options[this.index].hidden = false;
+            button.parentNode.parentNode
+            .removeChild(button.parentNode);
+            this.main.applyFilter.removeFilterSelector(this.name);
+        });
     }
 
     updateColors (selectedJobs) {
@@ -42,11 +37,11 @@ export default class MultiSelectorComponent {
     selectedFilters() {
         const selector = document.getElementById(this.name);
         let filters = [].filter.call(selector.options, option => option.selected).map(option => option.text);
-        this.updateColors(filters);
+        if (filters.length !== 0) this.updateColors(filters);
         return filters;
     }
 
     view () {
-        return m("select", {id: this.name, multiple: true});
+        return [m("button", {id: this.name + "_button"},"x"), m("span", this.name), m("select", {id: this.name, multiple: true})];
     }
 }
