@@ -14,6 +14,10 @@ export default class DataHandler {
          */
         this.filters = [];
         /**
+         * All the datasets
+         */
+        this.allDatasets = [];
+        /**
          * All the emails
          */
         this.data = [];
@@ -55,6 +59,9 @@ export default class DataHandler {
         // Boolean whether or not the data has changed since last iteration
         this.dataChanged = true;
 
+        // name of the selected dataset
+        this.selectedDataset;
+
         this.emailDataTypes = [
             {key: "sentiment", name: "Sentiment", type: "number"},
             {key: "date", name: "Date", type: "date"}
@@ -74,9 +81,19 @@ export default class DataHandler {
      */
     add(name, csvData) {
         const raw = this.csvConverter(csvData);
-        this.data = this.data.concat(this.formatData(raw, name));
-        this.data = this.sortByDate("all");
+        this.allDatasets = this.allDatasets.concat(this.formatData(raw, name).sort((a, b) => a.date - b.date));
         this.main.applyFilter.availableData();
+        this.chooseDifferentDataset(name);
+        //this.main.selectDataFile.add(name);
+    }
+
+    /**
+     * Chooses the dataset to be displayed
+     * @param {string} name The name of the dataset you would like to visualize 
+     */
+    chooseDifferentDataset(name) {
+        this.selectedDataset = name;
+        this.data = this.allDatasets.filter(item => item.origin === name);
         this.update();
     }
 
@@ -85,9 +102,11 @@ export default class DataHandler {
      * @param {String} name The name of the dataset
      */
     remove(name) {
-        this.data = this.data.filter(item => item.origin !== name);
-        if (this.data.length === 0) this.main.applyFilter.availableData(false);
-        this.update();
+        this.allDatasets = this.allDatasets.filter(item => item.origin !== name);
+        if (this.allDatasets.length === 0) {
+            this.main.applyFilter.availableData(false);
+            this.update();
+        } else if (this.selectedDataset === name) this.chooseDifferentDataset(this.allDatasets[0].origin);
     }
     
     /**
