@@ -100,9 +100,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
 		}
 
         let node_link_diagram = d3.select('#node_link_diagram');
+        node_link_diagram.attr('class', 'svg-container');
         this.svg = node_link_diagram.append('svg')
-            .attr('width', this.dimensions.width)
-            .attr('height', this.dimensions.height)  
+            .attr('viewBox', '0 0 ' + this.dimensions.width + ' ' + this.dimensions.height) 
+            .attr('preserveAspectRatio', 'xMidYMid meet')
+            .attr('class', 'svg-content')
             .attr("shape-rendering", "optimizeSpeed")
 			.attr("image-rendering", "optimizeSpeed");
 
@@ -118,6 +120,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.scale.domain(this.jobtitles);        
 
         this.svg.append('g').attr("class", "brush end").call(brush).attr("class");   
+        // this.svg.attr('margin', 'auto');
 
         this.drawnEdges = this.svg.append('g').attr("class", "edge").selectAll('line');
         this.drawnNodes = this.svg.append('g').attr("class", "node").selectAll('circle').on('mousedown', (event) => {
@@ -701,7 +704,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     view() {
         return (
-            <div id='node_link_diagram'></div>
+            <div id='node_link_diagram' ></div>
         );
     }
 

@@ -49,11 +49,16 @@ export default class HierarchicalEdgeComponent extends Visualization {
 			.radius(d => d.y)
 			.angle(d => d.x / 180 * Math.PI);
 
-		this.svg = d3.select("#hierarchical_div").append("svg")
-			.attr("width", this.options.diameter)
-			.attr("height", this.options.diameter)
+		let svg_container = d3.select("#hierarchical_div");
+		svg_container.attr('class', 'svg-container');
+		
+		this.svg = svg_container.append("svg")
+			.attr('viewBox', '0 0 ' + this.options.diameter + ' ' + this.options.diameter) 
+			.attr('preserveAspectRatio', 'xMidYMid meet')
+			.attr('class', 'svg-content')
 			.attr("shape-rendering", "optimizeSpeed")
 			.attr("image-rendering", "optimizeSpeed")
+			// .attr('padding', '100px')
 			.append("g")
 			.attr("transform", "translate(" + radius + "," + radius + ")");
 
