@@ -45,7 +45,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             highlightedStrokeWidth: 2,
             basis: 0.2,
             amountBonus: 0.4,
-            defaultStroke: (alpha) => `rgba(0,0,0,${alpha})`,
+            defaultStroke: (alpha) => `rgba(70,130,180,${alpha})`,
             highlightedStroke: (alpha) => `rgba(255,100,0,${alpha})`
         }
 
@@ -59,10 +59,13 @@ export default class NodeLinkDiagramComponent extends Visualization {
             startAlpha: 1,
             alphaTarget: 0.01,
             alphaDecay: 0.05,
-            finalPositionThreshold: 0.001            
-        }
+            finalPositionThreshold: 0.001,            
+
 
         
+            maxAlpha: 0.7,
+            resetSimulationThreshold: 0.01            
+        }       
 
         this.maxNrNodes = 0;
         this.maxNrEdges = 0;
@@ -119,25 +122,21 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.drawnEdges = this.svg.append('g').attr("class", "edge").selectAll('line');
         this.drawnNodes = this.svg.append('g').attr("class", "node").selectAll('circle').on('mousedown', (event) => {
             if(!event.ctrlKey){
-
-                    console.log(event)
-                    this.main.dataHandler.clearSelectedPersons();
-                    for(let node in this.clickedNodes){
-                        this.main.dataHandler.addSelectedPerson(super.nodeToPersonObject(node));
-                    }
+                console.log(event)
+                this.main.dataHandler.clearSelectedPersons();
+                for(let node in this.clickedNodes){
+                    this.main.dataHandler.addSelectedPerson(super.nodeToPersonObject(node));
                 }
+            }
         }); 
-
-
 
         this.simulation = d3.forceSimulation()
             .force('link', d3.forceLink().id(node => {return node.id}))
             .force("center", d3.forceCenter(this.centerForce.x, this.centerForce.y).strength(this.centerForce.strength))
-                .tick(this.forces.ticks);
+            .tick(this.forces.ticks);
 
-        this.simulation.alphaTarget(this.simulationSettings.alphaTarget).alphaDecay(this.simulationSettings.alphaDecay).alpha(this.simulationSettings.startAlpha);
-        
-        console.log(this.simulation.alpha());
+        this.simulation.alphaTarget(this.simulationSettings.alphaTarget).alphaDecay(this.simulationSettings.alphaDecay).velocityDecay(0.5);        
+
         this.drawnEdges = this.svg.select('.edge').selectAll('line');
         this.drawnNodes = this.svg.select('.node').selectAll('circle');
 
@@ -165,9 +164,15 @@ export default class NodeLinkDiagramComponent extends Visualization {
             this.updateData(dataChangedAmount);
         }  
 
+        console.log(this.nodes);
+
         this.updateSimulation(dataChangedAmount);    
         this.updateForces();
         super.update();
+    }
+
+    changeSelection(){
+        this.update();
     }
 
     /**
@@ -251,6 +256,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 .iterations(this.collideForce.iterations));
 
     }
+
     /**
      *  This function updates the data used by this visualization
      */
@@ -395,10 +401,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
         }   
 
         this.nodes = Array.from(groupedNodes.values())
-        // console.log('this.nodes:', groupedNodes);
-
-        // console.log('this.nodes:', this.nodes);
-
     }
 
     /**
@@ -408,15 +410,16 @@ export default class NodeLinkDiagramComponent extends Visualization {
      */
     addNodeToGroup(node, groupedNodes){
         const group = groupedNodes.get(node.jobtitle);
-
+        
         // If there is no group in the groupedNodes with the jobtitle of the node yet, 
         // there needs to be added a group of this jobtitle with as nodes an array with the current node.
         if(group === undefined && node.nodes === undefined){
+
             groupedNodes.set(node.jobtitle, 
                 {
                     id: node.jobtitle, 
                     jobtitle: node.jobtitle, 
-                    x: this.dimensions.width / 2, 
+                    x: this.dimensions.width / 2,  
                     y: this.dimensions.height / 2, 
                     groupIsSelected: false,  
                     nodes: new Array(node)
@@ -425,6 +428,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         // If there is no group but there are nodes in node.nodes, the group of this jobtitle needs to 
         // be added with as nodes the given node.nodes.
         else if(group === undefined){
+
             groupedNodes.set(node.jobtitle, {id: node.jobtitle, jobtitle: node.jobtitle, x: node.x, y: node.y, groupIsSelected: node.groupIsSelected, nodes: node.nodes})
             this.maxNrNodes = this.maxNrNodes > node.nodes.length ? this.maxNrNodes : node.nodes.length;
         }
@@ -515,87 +519,67 @@ export default class NodeLinkDiagramComponent extends Visualization {
         }            
     }     
 
+    /**
+     * This function updates the values of the displayed nodes in the visualization.
+     */
     updateDrawnNodes() {
         this.drawnNodes.attr('r', (node) => node.nodes === undefined ? 
-                        this.nodeOptions.minRadius : this.normalizeValue(node.nodes.length, this.maxNrNodes, this.nodeOptions.minRadius, this.nodeOptions.maxRadius))
-                        .attr('fill', (node) => {
-                            // let selected = false;
-                            // if(this.main.dataHandler.personIsSelected(super.nodeToPersonObject(node))){
-                            //     selected = true;
-                            // }                
-                            // else if(node.nodes != undefined){
-                            //     selected = true;
-                            //     for(let groupedNode of node.nodes){
-                            //         if(!this.main.dataHandler.personIsSelected(groupedNode)){
-                            //             selected = false;
-                            //             break;
-                            //         }
-                            //     }
-                            // }
-                            // return selected ? this.nodeOptions.selectedFill : this.scale(node.jobtitle);
-        
-                            let selected = node.nodes === undefined ? this.main.dataHandler.personIsSelected(node) : this.isGroupSelected(node);
-                            return selected ? this.nodeOptions.selectedFill : this.scale(node.jobtitle);
-                        });
-
-        if(this.simulation.alpha() >= this.simulationSettings.alphaTarget + this.simulationSettings.finalPositionThreshold){
-            this.drawnNodes
-                .attr('cx', (d) => {
-                    return d.x 
-                })
-                .attr('cy', (d) => {
-                    return d.y 
-                })
-                
-        }
+                    this.nodeOptions.minRadius : this.normalizeValue(node.nodes.length, this.maxNrNodes, this.nodeOptions.minRadius, this.nodeOptions.maxRadius)) 
+            .attr('cx', (d) => {
+                return d.x 
+            })
+            .attr('cy', (d) => {
+                return d.y 
+            })
+            .attr('fill', (node) => {
+                let selected = node.nodes === undefined ? this.main.dataHandler.personIsSelected(node) : this.isGroupSelected(node);
+                return selected ? this.nodeOptions.selectedFill : this.scale(node.jobtitle);
+            })
     }    
 
+    /**
+     * This function updates the values of the displayed edges in the visualization
+     */
     updateDrawnEdges() {
-        this.drawnEdges
-                    .attr('stroke', edge => {
-                        const alpha = (this.edgeOptions.amountBonus * edge.nr / this.maxNrEdges + this.edgeOptions.basis).toFixed(2);
-                        return edge.highlighted ? this.edgeOptions.highlightedStroke(alpha) : this.edgeOptions.defaultStroke(alpha);
 
-                    })
-                    .attr('stroke-width', edge => {
-                        return edge.highlighted ? this.edgeOptions.highlightedStrokeWidth : this.edgeOptions.strokeWidth;
-                    })
-        if(this.simulation.alpha() >= this.simulationSettings.alphaTarget + this.simulationSettings.finalPositionThreshold){         
-            this.drawnEdges.attr('x1', (edge) => {
-                    return edge.source.x;
-                })
-                .attr('y1', (edge) => {
-                    return edge.source.y;
-                })
-                .attr('x2', (edge) => {
-                    return edge.target.x;
-                })
-                .attr('y2', (edge) => {
-                    return edge.target.y;
-                })
-        }
+        this.drawnEdges.attr('x1', (edge) => {
+                return edge.source.x;
+            })
+            .attr('y1', (edge) => {
+                return edge.source.y;
+            })
+            .attr('x2', (edge) => {
+                return edge.target.x;
+            })
+            .attr('y2', (edge) => {
+                return edge.target.y;
+            })
+            .attr('stroke', edge => {
+                const alpha = (this.edgeOptions.amountBonus * edge.nr / this.maxNrEdges + this.edgeOptions.basis).toFixed(2);
+                return edge.highlighted ? this.edgeOptions.highlightedStroke(alpha) : this.edgeOptions.defaultStroke(alpha);
+
+            })
+            .attr('stroke-width', edge => {
+                return edge.highlighted ? this.edgeOptions.highlightedStrokeWidth : this.edgeOptions.strokeWidth;
+            })
     }
 
+    /**
+     * Checks if all the nodes in the given node group are selected, if so node.groupIsSelected will be set true and the return will be true 
+     * else the return will be false.
+     * @param {*} node 
+     * @returns if the group of nodes in node is selected or not.
+    */  
     isGroupSelected(node){
-        // let selected = false;
-        // if(node.groupIsSelected) selected = true;
-        // else{
-          let  selected = true;
-                for(let groupedNode of node.nodes){
-                    if(!this.main.dataHandler.personIsSelected(groupedNode)){
-                        selected = false;
-                        break;
-                    }
-                }
-        // }
+        let  selected = true;
+        for(let groupedNode of node.nodes){
+            if(!this.main.dataHandler.personIsSelected(groupedNode)){
+                selected = false;
+                break;
+            }
+        }
         node.groupIsSelected = selected;
         return selected;        
-    }
-
-   
-
-    changeSelection(){
-        this.update();
     }
 
     mouseOverNode(node){
@@ -617,16 +601,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     mouseUpNode(node){
         this.deselectEdges();
-    }
-
-    addSelectedNode(node){
-        this.main.dataHandler.addSelectedPerson(node);
-        this.clickedNodes.set(node.id, node);
-    }
-
-    removeSelectedNode(node){
-        this.main.dataHandler.removeSelectedPerson(node);
-        this.clickedNodes.delete(node.id) 
     }
 
     groupNode(node){
@@ -658,6 +632,16 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.selectEdges(node);
         
         this.main.visualizer.changeSelection();
+    }
+
+    addSelectedNode(node){
+        this.main.dataHandler.addSelectedPerson(node);
+        this.clickedNodes.set(node.id, node);
+    }
+
+    removeSelectedNode(node){
+        this.main.dataHandler.removeSelectedPerson(node);
+        this.clickedNodes.delete(node.id) 
     }
 
     selectEdges(node){

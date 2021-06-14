@@ -67,16 +67,12 @@ export default class HierarchicalEdgeComponent extends Visualization {
 			.data(root.leaves())
 			.enter().append("text")
 			.attr("dy", "0.31em")
-			.attr("transform", d => `rotate(${d.x - 90})translate(${d.y + 8},0)${d.x < 180 ? "" : "rotate(180)"}`)
+			.attr("transform", d => `rotate(${d.x - 90})translate(${d.y + 20},0)${d.x < 180 ? "" : "rotate(180)"}`)//90
 			.attr("text-anchor", d => d.x < 180 ? "start" : "end")
 			.text(d => d.data.key)
 			.style("font-size", this.options.diameter/65 + "px")
 			.attr("class", "hier-node")
-			.attr('fill', node => {
-				const scale = d3.scaleOrdinal(d3.schemeCategory10);
-				scale.domain(this.jobtitles);
-				return scale(node.data.parent.key);
-			})
+			.attr("fill", "#a8a8a8")
 			.on('mouseup', (event, node) => {
 				this.mouseOutNode(node);
             })
@@ -98,22 +94,21 @@ export default class HierarchicalEdgeComponent extends Visualization {
 				jobMapping[person.jobtitle] = jobtitle_ + 1;
 			}
 		}
-//
-		//console.log(jobMapping);
-		//
+
 		//// Donut chart
 		const color = d3.scaleOrdinal()
 			.domain(Object.keys(jobMapping))
-			.range(d3.schemeCategory10);
-//
+			.range(["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b","#e377c2","#7f7f7f","#bcbd22","#17becf"]);
+			// this is category10, not working tho
+
 		const pie = d3.pie()
 			.sort(null)
 			.value(d => d[1])
 		const data_ready = pie(Object.entries(jobMapping));
-//
+
 		const arc = d3.arc()
-			.innerRadius(this.options.diameter * 0.25)
-			.outerRadius(this.options.diameter * 0.4)
+			.innerRadius(this.options.diameter * 0.34)
+			.outerRadius(this.options.diameter * 0.375)
 				
 		this.svg.append('g')
 			.attr('class', 'pie')
@@ -123,34 +118,35 @@ export default class HierarchicalEdgeComponent extends Visualization {
 			.append('path')
 			.attr('d', arc)
 			.classed('arc', true)
-			.attr('fill', d => color(d.data[1]))
-//
-		//var second_svg = d3.select("#hierarchical_div")
-		//	.append("svg")
-		//	  .attr("width", 150)
-		//	  .attr("height", 250)
-		//	.append("g")
-		//	  .attr("transform", "translate(" + 150 / 2 + "," + 250 / 2 + ")");		
-//
-		//second_svg
-		//	.selectAll('allSlices')
+			//.attr("id", function(d,i) { return "warped_" + i;})
+			.attr('fill', d => color(d.data[0]))
+			.attr("stroke", "#24252a")
+			.style("stroke-width", "0px") // Padding between slices
+			.style("opacity", 1)
+			.on('mousedown', function(d) {console.log(d.data)} );
+
+		//this.svg
+		//	.selectAll('arc')
 		//	.data(data_ready)
 		//	.enter()
-		//	.append('path')
-		//	.attr('d', arc)
-		//	.attr('fill', function(d){ return(color(d.data.key)) })
-		//	.attr("stroke", "white")
-		//	.style("stroke-width", "5px") // Padding between slices
-		//	.style("opacity", 0.9);		
-		//#endregion	
-
+		//	.append('text')
+		//	.text( function(d) { if (d.data[1] >= 7) {return d.data[0] }} )
+		//	.attr('transform', function(d) {
+		//	  return 'translate(' + arc.centroid(d).join(",") + ')';
+		//	})
+		//	.style('text-anchor', function(d) {
+		//	  var midangle = d.startAngle + (d.endAngle - d.startAngle) / 2
+		//	  return (midangle < Math.PI ? 'start' : 'end')
+		//	})
+		//	.attr("class", "hier-arc-text")	
+			//.append("textPath")
+    		//.attr("xlink:href", function(d,i) {return "#warped_" + i;})
 	}
 
 	update() {
 		if(this.main.dataHandler.data.length === 0) return;
         if(this.cluster === undefined) return this.oncreate();
 
-		//#region 
 		const persons = this.main.dataHandler.getPersons('all');
 		const mapping = new Map();
 		const holder = this.main.dataHandler;
@@ -208,8 +204,6 @@ export default class HierarchicalEdgeComponent extends Visualization {
 			.sum(d => d.size);
 		this.cluster(root);
 
-		//#endregion
-
 		// Create the links
 		this.svg.selectAll(".hier-stroke").remove();
 		this.svg.selectAll("path").data(this.packageImports(root.leaves()))
@@ -225,10 +219,12 @@ export default class HierarchicalEdgeComponent extends Visualization {
 
 				if (highlightedIn){
 					this.greenNodes.set(link.target.data.name, true);
+					//d3.select(link).raise();
 					return "hier-stroke highlightedIn";
 				}
 				else if(highlightedOut){
 					this.redNodes.set(link.source.data.name, true);
+					//d3.select(link).raise();
 					return "hier-stroke highlightedOut";
 				}
 				else{
@@ -282,7 +278,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
 				if (this.main.dataHandler.personIsSelected(node.data)){
 					return "steelblue";
 				}
-				return;
+				return "#a8a8a8";
 			});
 	}
 
@@ -290,13 +286,15 @@ export default class HierarchicalEdgeComponent extends Visualization {
 		if(!this.main.dataHandler.personIsSelected(node.data)){
 			this.main.dataHandler.addSelectedPerson(node.data);
 		}
+		else{
+			this.main.dataHandler.removeSelectedPerson(node.data);
+		}
 		this.highlighted.set(node.data.name, true)
 		//this.update();
 		this.main.visualizer.changeSelection();
 	}
 
 	mouseOutNode(node){
-		this.main.dataHandler.removeSelectedPerson(node.data);
 		this.highlighted.set(node.data.name, false)
 		this.update();
 	}

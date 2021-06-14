@@ -76,7 +76,7 @@ export default class DataHandler {
         const raw = this.csvConverter(csvData);
         this.data = this.data.concat(this.formatData(raw, name));
         this.data = this.sortByDate("all");
-
+        this.main.applyFilter.availableData();
         this.update();
     }
 
@@ -86,7 +86,7 @@ export default class DataHandler {
      */
     remove(name) {
         this.data = this.data.filter(item => item.origin !== name);
-
+        if (this.data.length === 0) this.main.applyFilter.availableData(false);
         this.update();
     }
     
@@ -142,10 +142,7 @@ export default class DataHandler {
      */
     meetsFilters(item) {
         for(const filter of this.filters) {
-            if(filter.type === FilterTypes.EQUAL) {
-                if (Array.isArray(filter.value) && !filter.value.includes(item[filter.column])) return false;
-                if (!Array.isArray(filter.value) && item[filter.column] !== filter.value) return false;    
-            }
+            if(filter.type === FilterTypes.EQUAL && item[filter.column] !== filter.value) return false;
             if(filter.type === FilterTypes.LESSER && item[filter.column] >= filter.value) return false;
             if(filter.type === FilterTypes.GREATER && item[filter.column] <= filter.value) return false;
             if(filter.type === FilterTypes.INCLUDES && !filter.value.includes(item[filter.column])) return false;
@@ -161,8 +158,8 @@ export default class DataHandler {
     updateTimed(timedOnly = false) {
         this.dataChanged = true;
 
-        let newFirstIndex = 0;
-        let newLastIndex = 0;
+        let newFirstIndex = this.firstIndex;
+        let newLastIndex = this.lastIndex;
 
         if(this.filteredData[this.firstIndex].date.getTime() < this.timeSpan.startTime) {
             for(let i = this.firstIndex; i < this.lastIndex; i++) {
