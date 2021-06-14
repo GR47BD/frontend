@@ -51,7 +51,7 @@ for(let i = 0; i < nNodes; i++) {
     nodes.push({id, email, jobtitle});
 }
 
-fs.appendFileSync(path.join(__dirname, file), "date,fromId,fromEmail,fromJobtitle,toId,toEmail,toJobtitle,messageType,sentiment\n");
+fs.writeFileSync(path.join(__dirname, file), "date,fromId,fromEmail,fromJobtitle,toId,toEmail,toJobtitle,messageType,sentiment\n");
 let str = "";
 
 for(let i = 0; i < nEdges; i++) {

@@ -228,7 +228,22 @@ export default class DataHandler {
      * @returns {array} an array of objects based on the given csv data
      */
      csvConverter(csvData){
-        return jquery.toObjects(csvData);
+        const rows = csvData.split("\n");
+        const columns = rows[0].split(",");
+        const data = [];
+
+        for(let i = 1; i < rows.length; i++) {
+            const item = {};
+            const row = rows[i].split(",");
+
+            for(let j = 0; j < columns.length; j++) {
+                item[columns[j]] = row[j];
+            }
+
+            data[i-1] = item;
+        }
+
+        return data;
     }   
 
     /**
