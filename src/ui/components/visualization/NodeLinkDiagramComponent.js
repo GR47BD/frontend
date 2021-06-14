@@ -58,7 +58,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.simulationSettings = {
             startAlpha: 1,
             alphaTarget: 0.01,
-            alphaDecay: 0.05            
+            alphaDecay: 0.05,
+            finalPositionThreshold: 0.001            
         }
 
         
@@ -76,6 +77,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         this.groupOnJobtitle = true;
         this.startGrouponJobtitle = false;
+
+        this.previousNodes = [];
 
         this.clickedNodes = new Map();
 
@@ -132,9 +135,9 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .force("center", d3.forceCenter(this.centerForce.x, this.centerForce.y).strength(this.centerForce.strength))
                 .tick(this.forces.ticks);
 
-        this.simulation.alphaTarget(this.simulationSettings.alphaTarget).alphaDecay(this.simulationSettings.alphaDecay).velocityDecay(0.5);
+        this.simulation.alphaTarget(this.simulationSettings.alphaTarget).alphaDecay(this.simulationSettings.alphaDecay).alpha(this.simulationSettings.startAlpha);
         
-
+        console.log(this.simulation.alpha());
         this.drawnEdges = this.svg.select('.edge').selectAll('line');
         this.drawnNodes = this.svg.select('.node').selectAll('circle');
 
@@ -205,24 +208,21 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .attr('class', 'node')
 
         this.drawnEdges.attr('class', '.edge');
+   
 
-
-        if(this.main.dataHandler.dataChanged){            
-            let newAlpha = (dataChangedAmount * (0.7 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget;
-            let resetSimulationThreshold = 0.01;
-            if(this.simulationSettings.alphaTarget - newAlpha > resetSimulationThreshold){
+        // if(this.main.dataHandler.dataChanged){            
+        //     let newAlpha = (dataChangedAmount * (0.7 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget + this.simulationSettings.finalPositionThreshold;
+        //     let resetSimulationThreshold = 0.01;
+        //     if(this.simulationSettings.alphaTarget - newAlpha > resetSimulationThreshold){
+        //         console.log('newAlpha = ' + newAlpha);
+        //         this.simulation.alpha(newAlpha);
                 
-                this.simulation.alpha(newAlpha);
-                
-            }
-            this.simulation.restart();        
-        } 
+        //     }
+        //     // this.simulation.restart();        
+        // } 
 
         this.simulation.on('tick', () => {
-            // console.log(this.simulation.alpha());
-            if(this.simulation.alpha() <= this.simulationSettings.alphaTarget + 0.001){
-                // this.simulation.stop();
-            }       
+           
 
             this.updateDrawnNodes();
             this.updateDrawnEdges();
@@ -265,8 +265,20 @@ export default class NodeLinkDiagramComponent extends Visualization {
             this.createNodesGroup();
             this.createEdgesGroup();
         }
-  
-        let newAlpha = (dataChangedAmount * (0.5 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget;
+        
+        console.log('inside updateData'+ this.simulation.alpha());
+           
+        let newAlpha = (dataChangedAmount * (0.7 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget + this.simulationSettings.finalPositionThreshold;
+        let resetSimulationThreshold = 0.001;
+        // console.log(newAlpha + ', ' + (resetSimulationThreshold + this.simulationSettings.alphaTarget));
+        if(newAlpha > resetSimulationThreshold + this.simulationSettings.alphaTarget){
+            // console.log(' updateData ' + newAlpha);
+            
+            this.simulation.alpha(newAlpha);
+            
+        }
+     
+        // let newAlpha = (dataChangedAmount * (0.5 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget;
         this.simulation.alpha(newAlpha);
     }
 
@@ -276,6 +288,12 @@ export default class NodeLinkDiagramComponent extends Visualization {
      * needs to be kept and the data that needs to be added.
      */
     updateNodes(){
+
+        // if(this.simulation.alpha() <= this.simulationSettings.alphaTarget + this.simulationSettings.finalPositionThreshold){
+        //     this.nodes = [...this.previousNodes];
+        // }
+
+
         const persons = this.main.dataHandler.getPersons();
         
         let newNodes = [];
@@ -296,10 +314,13 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         this.nodes.push(...newNodes);            
 
+        console.log(this.previousNodes);
         this.personsIndex = new Map();
         for(let i = 0; i < this.nodes.length; i++){
             this.personsIndex.set(this.nodes[i].id, i);
         }
+
+        this.previousNodes = [...this.nodes];
     }
 
     /**
@@ -496,33 +517,64 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     updateDrawnNodes() {
         this.drawnNodes.attr('r', (node) => node.nodes === undefined ? 
-                    this.nodeOptions.minRadius : this.normalizeValue(node.nodes.length, this.maxNrNodes, this.nodeOptions.minRadius, this.nodeOptions.maxRadius)) 
-            .attr('cx', (d) => {
-                return d.x 
-            })
-            .attr('cy', (d) => {
-                return d.y 
-            })
-            .attr('fill', (node) => {
-                // let selected = false;
-                // if(this.main.dataHandler.personIsSelected(super.nodeToPersonObject(node))){
-                //     selected = true;
-                // }                
-                // else if(node.nodes != undefined){
-                //     selected = true;
-                //     for(let groupedNode of node.nodes){
-                //         if(!this.main.dataHandler.personIsSelected(groupedNode)){
-                //             selected = false;
-                //             break;
-                //         }
-                //     }
-                // }
-                // return selected ? this.nodeOptions.selectedFill : this.scale(node.jobtitle);
+                        this.nodeOptions.minRadius : this.normalizeValue(node.nodes.length, this.maxNrNodes, this.nodeOptions.minRadius, this.nodeOptions.maxRadius))
+                        .attr('fill', (node) => {
+                            // let selected = false;
+                            // if(this.main.dataHandler.personIsSelected(super.nodeToPersonObject(node))){
+                            //     selected = true;
+                            // }                
+                            // else if(node.nodes != undefined){
+                            //     selected = true;
+                            //     for(let groupedNode of node.nodes){
+                            //         if(!this.main.dataHandler.personIsSelected(groupedNode)){
+                            //             selected = false;
+                            //             break;
+                            //         }
+                            //     }
+                            // }
+                            // return selected ? this.nodeOptions.selectedFill : this.scale(node.jobtitle);
+        
+                            let selected = node.nodes === undefined ? this.main.dataHandler.personIsSelected(node) : this.isGroupSelected(node);
+                            return selected ? this.nodeOptions.selectedFill : this.scale(node.jobtitle);
+                        });
 
-                let selected = node.nodes === undefined ? this.main.dataHandler.personIsSelected(node) : this.isGroupSelected(node);
-                return selected ? this.nodeOptions.selectedFill : this.scale(node.jobtitle);
-            })
+        if(this.simulation.alpha() >= this.simulationSettings.alphaTarget + this.simulationSettings.finalPositionThreshold){
+            this.drawnNodes
+                .attr('cx', (d) => {
+                    return d.x 
+                })
+                .attr('cy', (d) => {
+                    return d.y 
+                })
+                
+        }
     }    
+
+    updateDrawnEdges() {
+        this.drawnEdges
+                    .attr('stroke', edge => {
+                        const alpha = (this.edgeOptions.amountBonus * edge.nr / this.maxNrEdges + this.edgeOptions.basis).toFixed(2);
+                        return edge.highlighted ? this.edgeOptions.highlightedStroke(alpha) : this.edgeOptions.defaultStroke(alpha);
+
+                    })
+                    .attr('stroke-width', edge => {
+                        return edge.highlighted ? this.edgeOptions.highlightedStrokeWidth : this.edgeOptions.strokeWidth;
+                    })
+        if(this.simulation.alpha() >= this.simulationSettings.alphaTarget + this.simulationSettings.finalPositionThreshold){         
+            this.drawnEdges.attr('x1', (edge) => {
+                    return edge.source.x;
+                })
+                .attr('y1', (edge) => {
+                    return edge.source.y;
+                })
+                .attr('x2', (edge) => {
+                    return edge.target.x;
+                })
+                .attr('y2', (edge) => {
+                    return edge.target.y;
+                })
+        }
+    }
 
     isGroupSelected(node){
         // let selected = false;
@@ -540,29 +592,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         return selected;        
     }
 
-    updateDrawnEdges() {
-
-        this.drawnEdges.attr('x1', (edge) => {
-                return edge.source.x;
-            })
-            .attr('y1', (edge) => {
-                return edge.source.y;
-            })
-            .attr('x2', (edge) => {
-                return edge.target.x;
-            })
-            .attr('y2', (edge) => {
-                return edge.target.y;
-            })
-            .attr('stroke', edge => {
-                const alpha = (this.edgeOptions.amountBonus * edge.nr / this.maxNrEdges + this.edgeOptions.basis).toFixed(2);
-                return edge.highlighted ? this.edgeOptions.highlightedStroke(alpha) : this.edgeOptions.defaultStroke(alpha);
-
-            })
-            .attr('stroke-width', edge => {
-                return edge.highlighted ? this.edgeOptions.highlightedStrokeWidth : this.edgeOptions.strokeWidth;
-            })
-    }
+   
 
     changeSelection(){
         this.update();
