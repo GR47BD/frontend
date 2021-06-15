@@ -155,7 +155,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
      * @param {boolean} recalculateForces defines if the simulation needs to be calculated fully again. Defaults to false.
      */
     update(recalculateForces = false){
-		if(this.main.dataHandler.data.length === 0) return;
+		if(this.main.dataHandler.allDatasets.length === 0) {
+            console.log('no data');
+            return;
+        }
+        console.log('update');
         if(this.simulation === undefined) return this.oncreate();
         
         //If recalculate forces is equal to true then the datachangedAmunt should be 1 else it will be based on the datahandler.
