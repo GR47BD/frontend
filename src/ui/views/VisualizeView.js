@@ -5,11 +5,14 @@ import DrawerComponent from "@/ui/components/drawer/DrawerComponent";
 import VisualizationContainerComponent from "@/ui/components/visualization/VisualizationContainerComponent";
 import UploadButtonComponent from "@/ui/components/UploadButtonComponent";
 import ApplyFilterComponent from "@/ui/components/ApplyFilterComponent";
-import StatisticsComponent from "../components/StatisticsComponent";
+import StatisticsComponent from "@/ui/components/StatisticsComponent";
+import OptionPanelComponent from "@/ui/components/drawer/OptionPanelComponent";
+import OptionPanels from "@/ui/components/drawer/OptionPanels";
 
 export default class VisualizeView {
     view(vnode) {
 		const main = vnode.attrs.main;
+		const optionPanels = new OptionPanels(main);
 		
         return (
             <div class="view">
@@ -17,7 +20,19 @@ export default class VisualizeView {
 				<div class="visualize-container">
 					<DrawerContainerComponent>
 						<DrawerComponent title="Options" id="options-drawer">
-							<ApplyFilterComponent main={main}></ApplyFilterComponent>
+							<OptionPanelComponent title="General" id="general"></OptionPanelComponent>
+							<OptionPanelComponent title="Filters" id="filters">
+								<ApplyFilterComponent main={main}></ApplyFilterComponent>
+							</OptionPanelComponent>
+							<OptionPanelComponent title="Node-link diagram" id="viz1">
+								{optionPanels.build("NodeLinkDiagram")}
+							</OptionPanelComponent>
+							<OptionPanelComponent title="Hierarichal edge bundling" id="viz2">
+								{optionPanels.build("HierarchicalEdgeComponent")}
+							</OptionPanelComponent>
+							<OptionPanelComponent title="massive sequence view" id="viz3">
+								{optionPanels.build("MassiveSequenceComponent")}
+							</OptionPanelComponent>
 						</DrawerComponent>
 					</DrawerContainerComponent>
 					

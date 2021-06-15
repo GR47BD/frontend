@@ -192,6 +192,88 @@ body {
 	}
 }
 
+.option-panel {
+	display: flex;
+	flex-direction: column;
+	margin-bottom: 8px;
+	
+	.header {
+		display: flex;
+		flex-direction: row;
+		margin-bottom: 4px;
+
+		.title {
+			text-transform: uppercase;
+			letter-spacing: 1px;
+			font-size: 10px;
+			line-height: 14px;
+			height: 14px;
+		}
+
+		.line {
+			flex-grow: 1;
+			border-bottom: 1px solid white;
+			height: 0px;
+			align-self: center;
+			margin: 0px 8px;
+		}
+
+		.close {
+			height: 14px;
+			margin-right: 4px;
+
+			svg {
+				fill: $text-col;
+				transform: rotate(90deg);
+				transition: .3s transform;
+			}
+		}
+	}
+
+	.option-content {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		max-height: 500px;
+		transition: .3s max-height;
+
+		.option-item {
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+
+			.key {
+				font-size: 12px;
+				flex-shrink: 1;
+				margin-right: 8px;
+			}
+
+			.value {
+				input {
+					width: 120px;
+				}
+			}
+		}
+	}
+
+	&:last-child {
+		margin-bottom: 0;
+	}
+
+	&.closed {
+		.header .close {
+			svg {
+				transform: rotate(180deg);
+			}
+		}
+
+		.option-content {
+			max-height: 0;
+		}
+	}
+}
+
 .statistics {
 	.header {
 		display: flex;
@@ -270,11 +352,12 @@ body {
 
 .visualization-panel {
 	font-family: $f-family;
-	background: $menu-back-col;
+	background: $back-col;
 	border-radius: $border-radius;
+	border: 1px solid $menu-back-col;
 	flex-grow: 1;
 	padding: 10px;
-	color: $text-col;
+	color: $menu-back-col;
 	margin-bottom: 20px;
 
 	.content {

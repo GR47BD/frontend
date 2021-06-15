@@ -19,6 +19,10 @@ export default class HierarchicalEdgeComponent extends Visualization {
 			amountBonus: 0.7,
 			highlightBonus: 0.3
 		}
+
+		this.styleOptions = {
+			textColor: "black"
+		}
     }
 
     oncreate(vnode){
@@ -77,7 +81,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
 			.text(d => d.data.key)
 			.style("font-size", this.options.diameter/65 + "px")
 			.attr("class", "hier-node")
-			.attr("fill", "#a8a8a8")
+			.attr("fill", this.styleOptions.textColor)
 			.on('mouseup', (event, node) => {
 				this.mouseOutNode(node);
             })
@@ -155,6 +159,11 @@ export default class HierarchicalEdgeComponent extends Visualization {
 		const persons = this.main.dataHandler.getPersons('all');
 		const mapping = new Map();
 		const holder = this.main.dataHandler;
+
+		this.line = d3.lineRadial()
+			.curve(d3.curveBundle.beta(this.lineOptions.tension))   // line tension
+			.radius(d => d.y)
+			.angle(d => d.x / 180 * Math.PI);
 
 		for(const person of persons) {
 			mapping.set(person.id, {
@@ -283,7 +292,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
 				if (this.main.dataHandler.personIsSelected(node.data)){
 					return "steelblue";
 				}
-				return "#a8a8a8";
+				return this.styleOptions.textColor;
 			});
 	}
 

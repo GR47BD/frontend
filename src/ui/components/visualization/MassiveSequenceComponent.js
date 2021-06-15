@@ -25,10 +25,10 @@ export default class MassiveSequenceComponent extends Visualization {
             },
             color: "steelblue",
             text: {
-                color: "lightgray",
+                color: "black",
                 hoverColor: "gray"
             },
-            indicatorColor: "white"
+            indicatorColor: "black"
         }
 
         this.indicatorActive = false;
@@ -57,9 +57,15 @@ export default class MassiveSequenceComponent extends Visualization {
         });
         this.canvas.addEventListener("mousemove", e => {
             this.handleMouseMove(e.offsetX, e.offsetY);
-        })
+        });
+        
+        new ResizeObserver(() => this.step()).observe(this.canvas.parentElement.parentElement.parentElement.parentElement);
         
         this.update();
+    }
+
+    resize() {
+        this.step();
     }
 
     // Actives the mouse indicator.
@@ -98,9 +104,9 @@ export default class MassiveSequenceComponent extends Visualization {
     // Is called by the visualizer when the data is stepped.
     step() {
         const startTime = new Date().getTime();
-        const bounds = this.canvas.parentNode.getBoundingClientRect();
+        const bounds = this.canvas.parentNode.parentNode.parentNode.parentNode.getBoundingClientRect();
 
-        this.width = bounds.width;
+        this.width = bounds.width - 40;
         this.height = this.order.size * 2 + this.sizes.dateHeight;
 
         this.canvas.width = this.width;
