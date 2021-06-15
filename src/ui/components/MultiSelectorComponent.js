@@ -17,8 +17,8 @@ export default class MultiSelectorComponent {
         this.purpose.forEach(x => { selector.innerHTML += " <option id='"+this.name+x+"'value='"+x+"'style='background-color:Tomato;'>"+x+"</option>"});
         button.addEventListener("click", () => {
             filterSelector.options[this.index].hidden = false;
-            button.parentNode.parentNode
-            .removeChild(button.parentNode);
+            button.parentNode.parentNode.parentNode
+            .removeChild(button.parentNode.parentNode);
             this.main.applyFilter.removeFilterSelector(this.name);
         });
     }
@@ -42,6 +42,6 @@ export default class MultiSelectorComponent {
     }
 
     view () {
-        return [m("button", {id: this.name + "_button"},"x"), m("span", this.name), m("select", {id: this.name, multiple: true})];
+        return [m("div", {className: "filter-item-top"}, [m("span", {className: "filter-item-title"}, this.name), m("span", {id: this.name + "_button", className: "filter-item-button"},"X")]), m("select", {id: this.name, multiple: true})];
     }
 }

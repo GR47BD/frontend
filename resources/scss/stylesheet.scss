@@ -210,6 +210,51 @@ body {
 	}
 }
 
+.filter {
+	display: flex;
+	flex-direction: column;
+
+	.filter-top {
+		display: flex;
+		flex-direction: row;
+
+		select {
+			flex-grow: 1;
+			margin-right: 8px;
+		}
+	}
+
+	.filter-item {
+		display: flex;
+		flex-direction: column;
+		padding: 8px;
+		border: 1px solid $back-col;
+		border-radius: 8px;
+		margin-top: 6px;
+
+		.filter-item-top {
+			display: flex;
+			flex-direction: row;
+			justify-content: space-between;
+			margin-bottom: 4px;
+
+			.filter-item-button {
+				color: darken($text-col, 30%);
+				transition: .3s color;
+				cursor: pointer;
+
+				&:hover {
+					color: $text-col;
+				}
+			}
+		}
+
+		select {
+			width: 100%;
+		}
+	}
+}
+
 .visualization-container {
 	flex: 1;
 	display: flex;

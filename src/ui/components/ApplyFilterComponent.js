@@ -68,6 +68,7 @@ export default class ApplyFilterComponent {
         let value = filterSelector.options[indexOf].value;
         let newDiv = document.createElement("div");
         newDiv.setAttribute("id", "base" + value);
+        newDiv.classList.add("filter-item");
         document.getElementById("baseFilter").appendChild(newDiv);
         this.availableFilters.set(value, new MultiSelectorComponent(this.main, value, indexOf));
         m.mount(newDiv, this.availableFilters.get(value));
@@ -81,15 +82,17 @@ export default class ApplyFilterComponent {
 
     view() {
         return (
-            <div id="baseFilter">
-                <span id="initialText">Please upload file to see filters</span>
-                <select id="filterSelector" hidden>
-                    <option id="default" value="default" selected>-- choose filter --</option> 
-                    <option id="fromJobtitle1" value="fromJobtitle">From Jobtitle</option>
-                    <option id="toJobtitle1" value="toJobtitle">To Jobtitle</option>
-                    <option id="messageType1" value="messageType">Message Type</option>
-                </select>
-                <button id="filterButton" hidden>Apply Filter</button>
+            <div class="filter" id="baseFilter">
+                <div class="filter-top">
+                    <span class="filter-text" id="initialText">Please upload file to see filters</span>
+                    <select id="filterSelector" hidden>
+                        <option id="default" value="default" selected>-- choose filter --</option> 
+                        <option id="fromJobtitle1" value="fromJobtitle">From Jobtitle</option>
+                        <option id="toJobtitle1" value="toJobtitle">To Jobtitle</option>
+                        <option id="messageType1" value="messageType">Message Type</option>
+                    </select>
+                    <button id="filterButton" hidden>Apply Filter</button>
+                </div>
             </div>
         );
     }
