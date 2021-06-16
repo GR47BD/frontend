@@ -26,11 +26,49 @@ export default class Visualization {
      changeSelection() {}
     
     // To be used when converting from a node object with unnecessary content, to a person object used by the event functions
-    nodeToPersonObject(node){
+    formatNodeForSelection(node){
+
+        if(node.emailsSent === undefined || node.emailsReceived === undefined){
+            node.emailsSent = [];
+            node.emailsReceived = [];
+            let emails = this.main.dataHandler.getEmailsForPerson(node.id);
+            console.log(emails);
+            emails.forEach(email => {
+                if(email.fromId === node.id){
+                    node.emailsSent.push(this.formatEmail(email));
+                }
+                else if(email.toId === node.id){
+                    node.emailsReceived.push(this.formatEmail(email));
+                }
+            })
+        }
+
         return{
             id: node.id,
             name: node.name,
-            jobtitle: node.jobtitle
+            jobtitle: node.jobtitle,
+            emailsSent: node.emailsSent,
+            emailsReceived: node.emailsReceived
+
         }
     }
+
+    formatEmail = (email) => 
+    { 
+        return{
+            jobtitles: {
+                source: email.fromJobtitle,
+                target: email.toJobtitle,
+            },
+            ids: {
+                source: email.fromId,
+                target: email.toId,
+            },
+            sentiment: email.sentiment,     
+            date: email.date,
+            id: email.id,
+        }
+    }
+
+    
 }

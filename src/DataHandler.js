@@ -272,6 +272,7 @@ export default class DataHandler {
      * @param {array} raw  The raw data array
      */
     formatData(raw, origin){
+        let idValue = 0;
         return raw.reduce((result, item) => {
             if(item.fromId != item.toId){
                 result.push({
@@ -284,8 +285,10 @@ export default class DataHandler {
                     toJobtitle: item.toJobtitle,
                     messageType: item.messageType,
                     sentiment: parseFloat(item.sentiment),
+                    id: idValue, 
                     origin
                 });
+                idValue++
             }
             return result
         }, []);   
@@ -481,7 +484,7 @@ export default class DataHandler {
     }
 
     /**
-     * @param {string, string, string} person This should be an object with the id of the person, the jobtitle and the name of the person
+     * @param {string, string, string} person This should be an object with the id of the person, the jobtitle, the name of the person the emailsSent and its emailsReceived
      */
     addSelectedPerson(person){
         this.selectedPersons.set(person.id, person);
@@ -527,34 +530,52 @@ export default class DataHandler {
         return jobtitleCount;
     }
 
-    /**
-     * THIS IS NOT EFFICIENT AT ALL
-     * should probably only be done by a button press by the user
-     * @returns {float, float, float} total edges, incoming edges, outgoing edges
-     */
-    getEmailStatisticsOfSelection(){
-        let totalEmails = new Set();
-        let stats = {
-            total: 0,
-            incoming: 0,
-            outgoing: 0
+    getSelectionEmailsCount(){
+        let emails = new Map();
+        for(let person of this.selectedPersons.values()){
+            for(let email of person.emailsSent && person.emailsReceived){
+                emails.set(email.id);
+            }
         }
+        return emails.size;
+    }
 
-        for(const person of this.selectedPersons){
-            // console.log(person[1]);
-            let emails = this.getEmailsForPerson(person[1].id);
-            
-            for(const email of emails){
-                totalEmails.add(email);
-                // console.log(email);
-                if(email.fromId === person[1].id) stats.outgoing++;
-                if(email.toId === person[1].id) stats.incoming++;
+    getEmailStatisticsOfSelection(){
+        let emails = new Set();
+        let outgoingEmails = new Set();
+        let incomingEmails = new Set();
+        let mutualEmails = new Set();
+
+        for(let person of this.selectedPersons.values()){
+            for(let email of person.emailsSent){
+                emails.add(email.id);
+                if(incomingEmails.has(email.id)){
+                    mutualEmails.add(email.id);
+                    incomingEmails.delete(email.id);
+                } else{
+                    outgoingEmails.add(email.id)
+                }
+            }
+            for(let email of person.emailsReceived){
+                emails.add(email.id);
+                if(outgoingEmails.has(email.id)){
+                    mutualEmails.add(email.id);
+                    outgoingEmails.delete(email.id);
+                }
+                else{
+                    incomingEmails.add(email.id);
+                }
             }
         }
 
-        stats.total = totalEmails.size;
+        let statistics = {
+            total: emails.size,
+            incoming: incomingEmails.size,
+            outgoing: outgoingEmails.size,
+            mutual: mutualEmails.size
+        }
 
-        return stats;
+        return statistics;
     }
 
     /**

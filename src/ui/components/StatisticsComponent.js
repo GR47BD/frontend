@@ -32,6 +32,9 @@ export default class StatisticsComponent {
 			options.push(dataType);
 		}
 
+		options.push({key: "selection-general", group: 'Selection', name: 'General', type: "selection-general" });
+		options.push({key: "selection-jobtitle", group: 'Selection', name: 'Job Title', type: "category"});
+
 		return options;
 	}
 
@@ -68,6 +71,18 @@ export default class StatisticsComponent {
 						<li>Of which <span class="highlight">{this.main.dataHandler.getPersons("timed").length}</span> are within in the selected time span.</li>
 					</ul></div>
 				);
+			case "selection-general":
+				let statistics = this.main.dataHandler.getEmailStatisticsOfSelection();
+				console.log(statistics);
+				return(
+					<div class="wrapper"><ul>
+						<li>There are <span class="highlight">{this.main.dataHandler.selectedPersons.size}</span> individuals.</li>
+						<li>There are <span class="highlight">{statistics.total}</span> emails sent between these individuals.</li>
+						<li>Of these emails, there are  <span class="highlight">{statistics.mutual}</span> emails sent between these individuals, 
+						<span class="highlight">{statistics.incoming}</span> emails sent to these individuals and <span class="highlight">{statistics.outgoing}</span> emails set from these individuals</li>
+
+					</ul> </div>				
+					);
 			case "number":
 				var emails = this.main.dataHandler.getEmails();
 				var mean = emails.reduce((sum, value) => sum + value[option.key], 0) / emails.length;
@@ -107,7 +122,7 @@ export default class StatisticsComponent {
 				);
 			case "category":
 				var counts = {};
-				var persons = this.main.dataHandler.getPersons();
+				var persons = option.group === "Selection" ? this.main.dataHandler.selectedPersons.values() : this.main.dataHandler.getPersons()
 
 				for(const person of persons) {
 					if(counts[person.jobtitle] === undefined) counts[person.jobtitle] = 1;

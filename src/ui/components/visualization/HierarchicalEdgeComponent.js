@@ -298,7 +298,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
 
 	mouseDownNode(event, node){
 		if(!this.main.dataHandler.personIsSelected(node.data)){
-			this.main.dataHandler.addSelectedPerson(node.data);
+			this.main.dataHandler.addSelectedPerson(this.formatNodeForSelection(node.data));
 		}
 		else{
 			this.main.dataHandler.removeSelectedPerson(node.data);
@@ -306,6 +306,8 @@ export default class HierarchicalEdgeComponent extends Visualization {
 		this.highlighted.set(node.data.name, true)
 		//this.update();
 		this.main.visualizer.changeSelection();
+		this.main.statistics.update();
+
 	}
 
 	mouseOutNode(node){

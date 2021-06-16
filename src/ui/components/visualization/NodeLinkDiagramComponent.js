@@ -99,6 +99,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
 			this.main.visualizer.addVisualization('NodeLinkDiagram', this);
 		}
 
+
         let node_link_diagram = d3.select('#node_link_diagram');
         node_link_diagram.attr('class', 'svg-container');
         this.svg = node_link_diagram.append('svg')
@@ -128,7 +129,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 console.log(event)
                 this.main.dataHandler.clearSelectedPersons();
                 for(let node in this.clickedNodes){
-                    this.main.dataHandler.addSelectedPerson(super.nodeToPersonObject(node));
+                    this.main.dataHandler.addSelectedPerson(super.formatNodeForSelection(node));
                 }
             }
         }); 
@@ -169,9 +170,10 @@ export default class NodeLinkDiagramComponent extends Visualization {
         if(this.main.dataHandler.dataChanged){
             console.log('dataChanged')
             this.updateData(dataChangedAmount);
+
         }  
 
-        console.log(this.nodes);
+        // console.log(this.nodes);
 
         this.updateSimulation(dataChangedAmount);    
         this.updateForces();
@@ -275,8 +277,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             if(this.startGrouponJobtitle){
                 this.groupedJobtitles = new Set(this.jobtitles);
             }
-            this.createNodesGroup();
-            this.createEdgesGroup();
+            this.groupData();
         }
         
         console.log('inside updateData'+ this.simulation.alpha());
@@ -357,6 +358,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 },
                 sentiment: email.sentiment,     
                 date: email.date,
+                id: email.id,
                 nr: 1,
                 highlighted: false
             }
@@ -391,73 +393,88 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.edges = Array.from(this.mailMap.values());
     }
 
+    groupData(){
+        this.createNodesGroup();
+        this.createEdgesGroup();
+
+        this.nodes = Array.from(this.groupedNodes.values());
+        this.edges = Array.from(this.groupedEdges.values());
+    }
+
     /**
      * loops through all nodes to check if they need to be added from a group or removed from a group
      */
     createNodesGroup(){
-        let groupedNodes = new Map();
+        this.groupedNodes = new Map();
         this.maxNrNodes = 0;
 
         for(let node of this.nodes){
+            if(node.nodes !== undefined) node.nodes.forEach(groupedNode => {
+                groupedNode.emailsSent = new Array();
+                groupedNode.emailsReceived = new Array();
+            });
+            else{
+                node.emailsSent = new Array
+                node.emailsReceived = new Array();
+            }
             if(this.groupedJobtitles.has(node.jobtitle)){
-                this.addNodeToGroup(node, groupedNodes);
+                this.addNodeToGroup(node);
             } 
             else {
-                this.removeNodeFromGroup(node, groupedNodes);
+                this.removeNodeFromGroup(node);
             }            
         }   
-
-        this.nodes = Array.from(groupedNodes.values())
     }
 
     /**
-     * adds the given node to the given groupedNodes map. 
+     * adds the given node to the given this.groupedNodes map. 
      * @param {*} node 
-     * @param {Map} groupedNodes 
+     * @param {Map} this.groupedNodes 
      */
-    addNodeToGroup(node, groupedNodes){
-        const group = groupedNodes.get(node.jobtitle);
+    addNodeToGroup(node){
+        const group = this.groupedNodes.get(node.jobtitle);
         
-        // If there is no group in the groupedNodes with the jobtitle of the node yet, 
+        // If there is no group in the this.groupedNodes with the jobtitle of the node yet, 
         // there needs to be added a group of this jobtitle with as nodes an array with the current node.
         if(group === undefined && node.nodes === undefined){
 
-            groupedNodes.set(node.jobtitle, 
+            this.groupedNodes.set(node.jobtitle, 
                 {
                     id: node.jobtitle, 
                     jobtitle: node.jobtitle, 
                     x: this.dimensions.width / 2,  
                     y: this.dimensions.height / 2, 
                     groupIsSelected: false,  
-                    nodes: new Array(node)
+                    nodes: new Array(node),
                 })
         }  
         // If there is no group but there are nodes in node.nodes, the group of this jobtitle needs to 
         // be added with as nodes the given node.nodes.
         else if(group === undefined){
 
-            groupedNodes.set(node.jobtitle, {id: node.jobtitle, jobtitle: node.jobtitle, x: node.x, y: node.y, groupIsSelected: node.groupIsSelected, nodes: node.nodes})
+            this.groupedNodes.set(node.jobtitle, {id: node.jobtitle, jobtitle: node.jobtitle, x: node.x, y: node.y, groupIsSelected: node.groupIsSelected, nodes: node.nodes})
             this.maxNrNodes = this.maxNrNodes > node.nodes.length ? this.maxNrNodes : node.nodes.length;
         }
         // If node.nodes is undefined but there is a group, this node needs to be pushed to the group. 
         else if(node.nodes === undefined) {
-                group.nodes.push(node)
-                this.maxNrNodes = this.maxNrNodes > group.nodes.length ? this.maxNrNodes : group.nodes.length;
+            group.nodes.push(node)
+            this.maxNrNodes = this.maxNrNodes > group.nodes.length ? this.maxNrNodes : group.nodes.length;
         }
     }
     /**
-     * adds the given node as a single node to the groupedNodes array if node.nodes is empty, else it adds every 
+     * adds the given node as a single node to the this.groupedNodes array if node.nodes is empty, else it adds every 
      * node in node.nodes as a single node. So it removes the given node form its group and adds it as a single node.
      * @param {*} node 
-     * @param {*} groupedNodes 
+     * @param {*} this.groupedNodes 
      */
-    removeNodeFromGroup(node, groupedNodes){
+    removeNodeFromGroup(node){
         if(node.nodes === undefined){
-            groupedNodes.set(node.id, node);
+
+            this.groupedNodes.set(node.id, node);
         }
         else {
             for(let groupNode of node.nodes){
-                groupedNodes.set(groupNode.id, groupNode);
+                this.groupedNodes.set(groupNode.id, groupNode);
             }
         }
     }
@@ -471,7 +488,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
         for(const edge of this.edges){
             this.checkEdgeForGroup(edge);
         }
-        this.edges = Array.from(this.groupedEdges.values());
     }
 
     /**
@@ -507,8 +523,10 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 source: source,
                 target: target,
                 nr: edge.nr,
+                id: edge.id,
                 highlighted: false,
             });                
+
         }    
         // If there is an edge with the given source and target in the groupedEdges map and no edges array on the current edge,
         // the current edge needs to be added to the group in the map and the number of edges in that group increase.
@@ -523,8 +541,44 @@ export default class NodeLinkDiagramComponent extends Visualization {
             for(let groupedEdge of edge.edges){
                 this.checkEdgeForGroup(groupedEdge);
             }
-        }            
+            return; // You do not want to add this edge to a node because it is a group of edges and not a single edge so we return.
+        }
+        this.addEdgeToNodes(edge, source, target);
+
+        
     }     
+
+    addEdgeToNodes(edge, source, target){
+        const sourceNode = this.groupedNodes.get(source);
+        const targetNode = this.groupedNodes.get(target);
+
+        this.checkEdgeToAddToNode(edge, source, sourceNode, true);
+        this.checkEdgeToAddToNode(edge, target, targetNode, false);
+    }
+
+    checkEdgeToAddToNode(edge, id, node, isSource){
+        const attr = isSource ? 'source' : 'target';
+        if(this.groupedJobtitles.has(id)){
+            for(let groupedNode of node.nodes){
+                if(groupedNode.id === edge.ids[attr]){
+                    this.addEdgeToNode(edge, groupedNode, isSource);
+                }
+            }            
+        }
+        else{
+            this.addEdgeToNode(edge, node, isSource);
+        }
+    }    
+
+    addEdgeToNode(edge, node, isSource){
+        const attribute = isSource ? 'emailsSent' : 'emailsReceived';
+        if(node[attribute] === undefined){
+            node[attribute] = new Array(edge);
+        }
+        else{
+            node[attribute].push(edge)
+        }
+    }
 
     /**
      * This function updates the values of the displayed nodes in the visualization.
@@ -617,9 +671,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
         else{
             this.groupedJobtitles.add(node.jobtitle);
         }
-        this.createNodesGroup();
-        this.createEdgesGroup();
-        this.update(false, true);
+        this.groupData();
+        this.update(true);
     }
 
     toggleNodeSelection(node){
@@ -639,10 +692,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.selectEdges(node);
         
         this.main.visualizer.changeSelection();
+        this.main.statistics.update();
     }
 
     addSelectedNode(node){
-        this.main.dataHandler.addSelectedPerson(node);
+        this.main.dataHandler.addSelectedPerson(this.formatNodeForSelection(node));
         this.clickedNodes.set(node.id, node);
     }
 
@@ -682,20 +736,22 @@ export default class NodeLinkDiagramComponent extends Visualization {
         for (let i = 0; i < this.nodes.length; i++){
             const node = this.nodes[i];
             if (node.x <= x1 && node.y <= y1 && node.x >= x0 && node.y >= y0){
-                if(this.main.dataHandler.personIsSelected(super.nodeToPersonObject(node))) continue;
-                this.main.dataHandler.addSelectedPerson(super.nodeToPersonObject(node));
+                if(this.main.dataHandler.personIsSelected(node)) continue;
+                this.main.dataHandler.addSelectedPerson(super.formatNodeForSelection(node));
             }
             else {
-                if(!this.main.dataHandler.personIsSelected(super.nodeToPersonObject(node)) || this.clickedNodes.has(node.id)) continue;
-                this.main.dataHandler.removeSelectedPerson(super.nodeToPersonObject(node));
+                if(!this.main.dataHandler.personIsSelected(node) || this.clickedNodes.has(node.id)) continue;
+                this.main.dataHandler.removeSelectedPerson(node);
             }
         }
         this.main.visualizer.changeSelection();
+        this.main.statistics.update();
+
      }
 
     addClickedNodes(){
         for(let node in this.clickedNodes){
-            this.main.dataHandler.addSelectedPerson(super.nodeToPersonObject(node));
+            this.main.dataHandler.addSelectedPerson(super.formatNodeForSelection(node));
         }
     }
 
