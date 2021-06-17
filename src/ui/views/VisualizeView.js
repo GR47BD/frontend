@@ -8,6 +8,7 @@ import ApplyFilterComponent from "@/ui/components/ApplyFilterComponent";
 import StatisticsComponent from "@/ui/components/StatisticsComponent";
 import OptionPanelComponent from "@/ui/components/drawer/OptionPanelComponent";
 import OptionPanels from "@/ui/components/drawer/OptionPanels";
+import SelectDataFileComponent from "@/ui/components/SelectDataFileComponent";
 
 export default class VisualizeView {
     view(vnode) {
@@ -41,6 +42,7 @@ export default class VisualizeView {
 					<DrawerContainerComponent right={true}>
 						<DrawerComponent title="Data" right={true} id="data-drawer">
 							<UploadButtonComponent main={main}></UploadButtonComponent>
+							<SelectDataFileComponent main={main}></SelectDataFileComponent>
 						</DrawerComponent>
 						<DrawerComponent right={true} topless={true} id="statistics-drawer">
 							<StatisticsComponent main={main}></StatisticsComponent>

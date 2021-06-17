@@ -292,6 +292,28 @@ body {
 	}
 }
 
+.datafile-base {
+	display: flex;
+	flex-direction: column;
+
+	.datafile-selector {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		margin-bottom: 4px;
+
+		.datafile-button {
+			color: darken($text-col, 30%);
+			transition: .3s color;
+			cursor: pointer;
+
+			&:hover {
+				color: $text-col;
+			}
+		}
+	}
+}
+
 .filter {
 	display: flex;
 	flex-direction: column;

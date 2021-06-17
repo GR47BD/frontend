@@ -84,7 +84,7 @@ export default class DataHandler {
         this.allDatasets = this.allDatasets.concat(this.formatData(raw, name).sort((a, b) => a.date - b.date));
         this.main.applyFilter.availableData();
         this.chooseDifferentDataset(name);
-        //this.main.selectDataFile.add(name);
+        this.main.selectDataFile.add(name);
     }
 
     /**
