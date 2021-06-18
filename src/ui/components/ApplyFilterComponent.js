@@ -1,11 +1,13 @@
 import m from "mithril";
 import MultiSelectorComponent from "@/ui/components/MultiSelectorComponent";
+import SliderComponent from "./SliderComponent";
 
 export default class ApplyFilterComponent {
     oninit(vnode) {
         this.main = vnode.attrs.main;
         this.main.applyFilter = this;
         this.availableFilters = new Map;
+        this.indexOfSliders = [4];
     }
 
     oncreate(vnode) {
@@ -42,13 +44,19 @@ export default class ApplyFilterComponent {
         this.updateVizualisation();
     }
 
-    availableData(available = true) {
-        if (available) {
-           document.getElementById("filterSelector").hidden = false;
-           document.getElementById("initialText").hidden = true;
-        } else {
+    availableData() {
+        document.getElementById("filterSelector").hidden = false;
+        document.getElementById("initialText").hidden = true;
+    }
 
+    newData() {
+        for(let [key,value] of this.availableFilters) {
+            document.getElementById("base"+key).remove();
+            document.getElementById(key+"1").hidden = false;
         }
+        this.availableFilters.clear();
+        this.hideButton();
+        this.pushFilters();
     }
 
     hideButton() {
@@ -70,7 +78,8 @@ export default class ApplyFilterComponent {
         newDiv.setAttribute("id", "base" + value);
         newDiv.classList.add("filter-item");
         document.getElementById("baseFilter").appendChild(newDiv);
-        this.availableFilters.set(value, new MultiSelectorComponent(this.main, value, indexOf));
+        if (this.indexOfSliders.includes(indexOf)) this.availableFilters.set(value, new SliderComponent(this.main, value, indexOf));
+        else this.availableFilters.set(value, new MultiSelectorComponent(this.main, value, indexOf));
         m.mount(newDiv, this.availableFilters.get(value));
     }
 
@@ -90,6 +99,7 @@ export default class ApplyFilterComponent {
                         <option id="fromJobtitle1" value="fromJobtitle">From Jobtitle</option>
                         <option id="toJobtitle1" value="toJobtitle">To Jobtitle</option>
                         <option id="messageType1" value="messageType">Message Type</option>
+                        <option id="sentiment1" value="sentiment">Sentiment</option>
                     </select>
                     <button id="filterButton" hidden>Apply Filter</button>
                 </div>

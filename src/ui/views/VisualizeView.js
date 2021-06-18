@@ -22,6 +22,7 @@ export default class VisualizeView {
 					<DrawerContainerComponent>
 						<DrawerComponent title="Options" id="options-drawer">
 							<OptionPanelComponent title="General" id="general"></OptionPanelComponent>
+							<OptionPanelComponent title="Highlight" id="highlight"></OptionPanelComponent>
 							<OptionPanelComponent title="Filters" id="filters">
 								<ApplyFilterComponent main={main}></ApplyFilterComponent>
 							</OptionPanelComponent>

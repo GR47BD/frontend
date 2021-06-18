@@ -39,6 +39,15 @@ export default class DataHandler {
             endTime: undefined
         });
         /**
+         * The sentiment values and 
+         */
+        this.sentiment = {
+            minSentiment: undefined,
+            maxSentiment: undefined,
+            startSentiment: undefined,
+            endSentiment: undefined
+        };
+        /**
          * The job titles for each list of data
          */
         this.jobTitles = {}
@@ -60,7 +69,7 @@ export default class DataHandler {
         this.dataChanged = true;
 
         // name of the selected dataset
-        this.selectedDataset;
+        this.selectedDataset = undefined;
 
         this.emailDataTypes = [
             {key: "sentiment", name: "Sentiment", type: "number"},
@@ -93,6 +102,7 @@ export default class DataHandler {
      */
     chooseDifferentDataset(name) {
         this.selectedDataset = name;
+        this.main.applyFilter.newData();
         this.data = this.allDatasets.filter(item => item.origin === name);
         this.update();
     }
@@ -297,7 +307,7 @@ export default class DataHandler {
     /**
      * Sorts the data by date.
      */
-     sortByDate(selection = "timed"){
+    sortByDate(selection = "timed"){
         return this.dataFromSelectionName(selection).sort((a, b) => a.date - b.date);
     }
 
@@ -371,7 +381,7 @@ export default class DataHandler {
      *
     * @returns an array with all messagetypes
     */
-     getMessageType(selection = "timed"){
+    getMessageType(selection = "timed"){
         const emails = this.getEmails(selection);
 
         if(this.messageType[selection] === undefined || this.messageType[selection].length === 0){
@@ -409,7 +419,7 @@ export default class DataHandler {
      * @param {string} id the id of a person
      * @returns {array} an array of all the emails sent from and to a person based on its id
      */
-      getEmailsForPerson(id, selection = "timed"){
+    getEmailsForPerson(id, selection = "timed"){
         return this.dataFromSelectionName(selection).filter(item => item.fromId == id || item.toId == id);
     }    
 
