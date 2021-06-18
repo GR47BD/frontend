@@ -11,10 +11,10 @@ export default class DataFileComponent {
         const selector = document.getElementById(this.name+"selector");
         const remover = document.getElementById(this.name+"remover");
         selector.addEventListener("click", () => {
-            this.main.dataHandler.chooseDifferentDataset(this.name);
-            this.main.selectDataFile.change(this.name);
             const customTxt = document.getElementById("custom-text");
             customTxt.innerHTML = this.name;
+            this.main.selectDataFile.change(this.name);
+            this.main.dataHandler.chooseDifferentDataset(this.name);
             this.main.visualizer.update();
 
         });
@@ -28,7 +28,7 @@ export default class DataFileComponent {
 
 
     view() {
-        return [m("span", {id: this.name+"selector", className: "datafile-button"}, this.name), m("span", {id: this.name+"remover"}, "x")];
+        return [m("span", {id: this.name+"selector", className: "datafile-button"}, this.name), m("span", {id: this.name+"remover", className: "datafile-button"}, "x")];
     }
 
 }

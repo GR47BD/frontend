@@ -292,14 +292,19 @@ body {
 	}
 }
 
-.datafile-base {
+.datafile {
 	display: flex;
 	flex-direction: column;
+	overflow-y: hidden;
 
-	.datafile-selector {
+	.datafile-item {
 		display: flex;
 		flex-direction: row;
+		padding: 8px;
+		border: 1px solid $back-col;
 		justify-content: space-between;
+		border-radius: 8px;
+		margin-top: 6px;
 		margin-bottom: 4px;
 
 		.datafile-button {
@@ -311,6 +316,7 @@ body {
 				color: $text-col;
 			}
 		}
+		
 	}
 }
 
@@ -563,6 +569,10 @@ body {
 .visualizations {
 	display: flex;
 	flex-direction: row;
+}
+
+.hide, .hidden {
+	display: none;
 }
 
 rect.selection {

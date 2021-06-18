@@ -13,8 +13,7 @@ export default class SelectDataFileComponent {
         const selector = document.getElementById("dataSelector");
         const newDataset = document.createElement("div");
         newDataset.setAttribute("id", name);
-        newDataset.hidden = true;
-        newDataset.class = "datafile-selector";
+        newDataset.setAttribute("class","hidden");
         selector.appendChild(newDataset);
         this.datasets.set(name, new DataFileComponent(this.main, name));
         m.mount(newDataset, this.datasets.get(name));
@@ -26,15 +25,15 @@ export default class SelectDataFileComponent {
         this.addDataset(name);
         if(this.datasets.size === 1) return;
         for (let [dataset, object] of this.datasets) {
-            if (dataset === name) document.getElementById(dataset).hidden = true;
-            else document.getElementById(dataset).hidden = false;
+            if (dataset === name) document.getElementById(dataset).setAttribute("class","hidden");
+            else document.getElementById(dataset).setAttribute("class","datafile-item");
         }
     }
 
     change(name) {
         for (let [dataset, object] of this.datasets) {
-            if (dataset === name) document.getElementById(dataset).hidden = true;
-            else document.getElementById(dataset).hidden = false;
+            if (dataset === name) document.getElementById(dataset).setAttribute("class","hidden");
+            else document.getElementById(dataset).setAttribute("class","datafile-item");
         }
     }
 
@@ -45,7 +44,7 @@ export default class SelectDataFileComponent {
 
     view() {
         return (
-            <div id="dataSelector" class="datafile-base"></div>
+            <div id="dataSelector" class="datafile"></div>
         );
     }
 
