@@ -32,7 +32,7 @@ export default class TimebarComponent {
 		});
 
 		// Change input fields and timespan when slider is changed
-		this.slider.on('end', (values, handle) => {
+		this.slider.on('change', (values, handle) => {
 			if(handle === 0) {
 				fromInput.valueAsDate = new Date(parseInt(values[handle]));
 			}
