@@ -9,7 +9,8 @@ export default class MassiveSequenceComponent extends Visualization {
 
         this.sizes = {
             personsWidth: 30,
-            dateHeight: 40
+            dateHeight: 40,
+            personHeight: 2
         }
 
         this.dateOptions = {
@@ -17,18 +18,15 @@ export default class MassiveSequenceComponent extends Visualization {
         }
 
         this.styleOptions = {
-            gradient: {
-                use: false,
-                color1: "blue",
-                color2: "orange",
-                color3: "yellow"
-            },
-            color: "steelblue",
-            text: {
-                color: "black",
-                hoverColor: "gray"
-            },
-            indicatorColor: "black"
+            useGradient: false,
+            gradientColor1: "#0000FF",
+            gradientColor2: "#FFA500",
+            gradientColor3: "#FFFF00",
+            color: "#4682B4",
+            textColor: "#000000",
+            textHoverColor: "#808080",
+            indicatorColor: "#000000",
+            alpha: 0.2
         }
 
         this.indicatorActive = false;
@@ -107,7 +105,7 @@ export default class MassiveSequenceComponent extends Visualization {
         const bounds = this.canvas.parentNode.parentNode.parentNode.parentNode.getBoundingClientRect();
 
         this.width = bounds.width - 40;
-        this.height = this.order.size * 2 + this.sizes.dateHeight;
+        this.height = this.order.size * this.sizes.personHeight + this.sizes.dateHeight;
 
         this.canvas.width = this.width;
         this.canvas.height = this.height;
@@ -123,10 +121,10 @@ export default class MassiveSequenceComponent extends Visualization {
     // Draws the persons part of the visualization.
     drawPersons() {
         for(const person of this.persons) {
-            const y = this.order.get(person.id) * 2;
+            const y = this.order.get(person.id) * this.sizes.personHeight;
 
             this.graphics.fillStyle = this.scale(person.jobtitle);
-            this.graphics.fillRect(0, y, this.sizes.personsWidth, 1);
+            this.graphics.fillRect(0, y, this.sizes.personsWidth, this.sizes.personHeight-1);
         }
     }
 
@@ -139,7 +137,7 @@ export default class MassiveSequenceComponent extends Visualization {
             const x = this.sizes.personsWidth + Math.round((this.width - this.sizes.personsWidth - 10) / (number - 1)) * i;
             const date = this.approximateDate(start, end, i/(number - 1));
             this.graphics.rotate(Math.PI/2);
-            this.graphics.fillStyle = this.hovering ? this.styleOptions.text.hoverColor : this.styleOptions.text.color;
+            this.graphics.fillStyle = this.hovering ? this.styleOptions.textHoverColor : this.styleOptions.textColor;
             this.graphics.fillText(this.dateToString(date), this.height - this.sizes.dateHeight, -x);
             this.graphics.rotate(-Math.PI/2);
         }
@@ -161,20 +159,20 @@ export default class MassiveSequenceComponent extends Visualization {
 
             if(edgeX < 0) continue;
 
-            this.graphics.globalAlpha = 0.2;
+            this.graphics.globalAlpha = this.styleOptions.alpha;
 
-            if(this.styleOptions.gradient.use) {
+            if(this.styleOptions.useGradient) {
                 const gradient = this.graphics.createLinearGradient(0, edgeY + y, 0, edgeHeight + edgeY + y);
 
                 if(y1 >= y2) {
-                    gradient.addColorStop(0, this.styleOptions.gradient.color1);
-                    gradient.addColorStop(0.5, this.styleOptions.gradient.color2);
-                    gradient.addColorStop(1, this.styleOptions.gradient.color3);
+                    gradient.addColorStop(0, this.styleOptions.gradientColor1);
+                    gradient.addColorStop(0.5, this.styleOptions.gradientColor2);
+                    gradient.addColorStop(1, this.styleOptions.gradientColor3);
                 } 
                 else {
-                    gradient.addColorStop(0, this.styleOptions.gradient.color3);
-                    gradient.addColorStop(0.5, this.styleOptions.gradient.color2);
-                    gradient.addColorStop(1, this.styleOptions.gradient.color1);
+                    gradient.addColorStop(0, this.styleOptions.gradientColor3);
+                    gradient.addColorStop(0.5, this.styleOptions.gradientColor2);
+                    gradient.addColorStop(1, this.styleOptions.gradientColor1);
                 }
                 this.graphics.fillStyle = gradient;
             }

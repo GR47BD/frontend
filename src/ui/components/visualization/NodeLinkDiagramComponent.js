@@ -45,8 +45,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
             highlightedStrokeWidth: 2,
             basis: 0.2,
             amountBonus: 0.4,
-            defaultStroke: (alpha) => `rgba(70,130,180,${alpha})`,
-            highlightedStroke: (alpha) => `rgba(255,100,0,${alpha})`
+            defaultStroke: "#4682b4",
+            highlightedStroke: "#ff6400"
         }
 
         this.nodeOptions = {
@@ -59,10 +59,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             startAlpha: 1,
             alphaTarget: 0.01,
             alphaDecay: 0.05,
-            finalPositionThreshold: 0.001,            
-
-
-        
+            finalPositionThreshold: 0.001,
             maxAlpha: 0.7,
             resetSimulationThreshold: 0.01            
         }       
@@ -616,9 +613,10 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 return edge.target.y;
             })
             .attr('stroke', edge => {
-                const alpha = (this.edgeOptions.amountBonus * edge.nr / this.maxNrEdges + this.edgeOptions.basis).toFixed(2);
-                return edge.highlighted ? this.edgeOptions.highlightedStroke(alpha) : this.edgeOptions.defaultStroke(alpha);
-
+                return edge.highlighted ? this.edgeOptions.highlightedStroke : this.edgeOptions.defaultStroke;
+            })
+            .attr('opacity', edge => {
+                return (this.edgeOptions.amountBonus * edge.nr / this.maxNrEdges + this.edgeOptions.basis).toFixed(2);
             })
             .attr('stroke-width', edge => {
                 return edge.highlighted ? this.edgeOptions.highlightedStrokeWidth : this.edgeOptions.strokeWidth;

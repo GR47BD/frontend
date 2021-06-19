@@ -9,7 +9,7 @@ export default class OptionPanelComponent {
 
     view(vnode) {
         return (
-            <div class="option-panel" id={`options-${vnode.attrs.id}`}>
+            <div class="option-panel closed" id={`options-${vnode.attrs.id}`}>
 				<div class="header">
 					<div class="title">{vnode.attrs.title}</div>
 					<div class="line"></div>

@@ -21,7 +21,10 @@ export default class HierarchicalEdgeComponent extends Visualization {
 		}
 
 		this.styleOptions = {
-			textColor: "black"
+			textColor: "black",
+			lineColor: "#4682b4",
+			lineHighlightInColor: "#1eb64c",
+			lineHighlightOutColor: "#ff4500"
 		}
     }
 
@@ -227,28 +230,31 @@ export default class HierarchicalEdgeComponent extends Visualization {
 				d.target = d[d.length - 1]
 			})
 			.attr("d", this.line)
-			.attr("class", link => {
+			.attr("class", "hier-stroke")
+			.attr("stroke", link => {
 				const highlightedOut = this.highlighted.get(link.target.data.name);
 				const highlightedIn = this.highlighted.get(link.source.data.name);
 
 				if (highlightedIn){
 					this.greenNodes.set(link.target.data.name, true);
 					//d3.select(link).raise();
-					return "hier-stroke highlightedIn";
+					return this.styleOptions.lineHighlightInColor;
 				}
 				else if(highlightedOut){
 					this.redNodes.set(link.source.data.name, true);
 					//d3.select(link).raise();
-					return "hier-stroke highlightedOut";
+					return this.styleOptions.lineHighlightOutColor;
 				}
-				else{
-					return "hier-stroke";}
+				else {
+					return this.styleOptions.lineColor;
+				}
 			})
 			.attr("opacity", (link, value) => {
-			const highlighted = this.highlighted.get(link.target.data.name) || this.highlighted.get(link.source.data.name);
-			const opacity = this.lineOptions.basis + this.lineOptions.amountBonus * (this.emails[value].nr/this.maxNr) + (highlighted ? this.lineOptions.highlightBonus : 0);
-			
-			return opacity > 1 ? 1 : opacity});
+				const highlighted = this.highlighted.get(link.target.data.name) || this.highlighted.get(link.source.data.name);
+				const opacity = this.lineOptions.basis + this.lineOptions.amountBonus * (this.emails[value].nr/this.maxNr) + (highlighted ? this.lineOptions.highlightBonus : 0);
+				
+				return opacity > 1 ? 1 : opacity;
+			});
 
 			this.updateNodes();
 
