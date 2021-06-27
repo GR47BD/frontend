@@ -4,7 +4,7 @@ export default class MenuBarComponent {
     view() {
         return (	
             <div class="menubar">
-				<div class="logo">GR47</div>	
+				<div class="logo">Plutode</div>	
 				<div class="links">
 					<div class="link" onclick={() => m.route.set("/")}>Home</div>
 					<div class="link" onclick={() => m.route.set("/visualize")}>Visualize</div>

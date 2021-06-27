@@ -9,7 +9,7 @@ $text-col: white;
 $container-col: #393e46;
 $f-family: "Montserrat", sans-serif;
 $margin-container: 0px;
-$main-color:rgba(0, 136, 169, 0.8);
+$main-color:rgb(0, 136, 169);
 $border-radius: 8px;
 
 body {
@@ -31,6 +31,7 @@ body {
 	width: 100vw;
 	height: $menubar-height;
 	background-color: $menu-back-col;
+	z-index: 100;
 
 	.logo {
 		order:1;
@@ -392,6 +393,10 @@ body {
 	color: $menu-back-col;
 	margin-bottom: 20px;
 
+	.title {
+		color: $menu-back-col;
+	}
+
 	.content {
 		margin-top: 10px;
 	}
@@ -415,6 +420,10 @@ body {
 	margin-bottom: 20px;
 	color: $text-col;
 	border-radius: $border-radius;
+
+	.noUi-connect {
+		background: $main-color;
+	}
 
 	svg {
 		fill: $text-col;
@@ -581,14 +590,232 @@ rect.selection {
 	border: 1px solid #000;
 	border-radius: 5px;
 	cursor: pointer;
+	transition: .3s background-color;
   }
   
 #custom-button:hover {
-	background-color: #2e9ab8;
+	background-color: darken($main-color, 5%);
 }
   
 #custom-text {
 	margin-left: 10px;
 	font-family: $f-family;
 	color: #aaa;
+}
+
+.index-container {
+	margin-top: $menubar-height;
+	background: $back-col;
+	padding-left: 20%;
+	padding-right: 20%;
+
+	.intro-text {
+		font-size: 15px;
+		font-family: "Montserrat", sans-serif;
+		color: $menu-back-col;
+	}
+	
+	.mini-titles {
+		font-size: 15px;
+		font-family: "Montserrat", sans-serif;
+		color: rgba(0, 136, 169, 0.8);
+		position: relative;
+		font-weight: bold;	
+		margin-top: 20px;
+		text-align: center;
+		margin-top: 50px;
+	}
+	
+	.container {
+		display: inline-block;
+	}
+
+	.vis-item {
+		display: flex;
+		flex-direction: column;
+		margin-bottom: 60px;
+
+		.vis-title {
+			font-size: 20px;
+			font-family: "Montserrat", sans-serif;
+			color: rgba(0, 136, 169, 0.8);
+			text-decoration: underline;
+			position: relative;
+			font-weight: bold;
+			margin-bottom: 5px;
+
+			&.right {
+				text-align: right;
+			}
+		}
+
+		.vis-content {
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+
+			img {
+				flex-basis: 30%;
+			}
+
+			.intro-text {
+				flex-basis: 70%;
+			}
+
+			&.double {
+				flex-direction: column;
+
+				img {
+					width: 100% !important;
+				}
+			}
+		}
+	}
+	
+	.our-team{
+		background: #d3d6db;
+		border-radius: 15px 15px 15px 15px;
+		text-align: center;
+		overflow: hidden;
+		position: relative;
+		margin-top: 15px;
+		margin-right: 10px;
+		padding: 30px 70px;
+	}
+	.our-team .pic{
+		display: inline-block;
+		width: 130px;
+		height: 130px;
+		margin-bottom: 0px;
+		z-index: 1;
+		position: relative;
+	}
+	
+	.our-team .pic::before{
+		content: "";
+		width: 100%;
+		height: 0;
+		border-radius: 50%;
+		background-color: rgba(0, 136, 169, 0.8);
+		position: absolute;
+		bottom: 135%;
+		right: 0;
+		left: 0;
+		opacity: 0.2;
+		transform: scale(3);
+		transition: all 0.3s linear 0s;
+		z-index: -1;
+	}
+	
+	.our-team .pic img{
+		width: 100%;
+		height: auto;
+		border-radius: 50%;
+		transform: scale(1);
+		transition: all 0.9s ease 0s;
+	}
+	
+	.our-team:hover .pic::before{
+		height:100%;
+	}
+	
+	.our-team .pic:after{
+		content: "";
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		background: #24252a;
+		position: absolute;
+		top: 0;
+		left: 0;
+		z-index: -1;
+	}
+	
+	.our-team:hover .pic img{
+		box-shadow: 0 0 0 14px #d3d6db;
+		transform: scale(0.7);
+	}
+	
+	.our-team .team-content{
+		margin-bottom: 30px;
+	}
+	
+	.our-team .title {
+		font-size: 22px;
+		font-weight: 700;
+		color: rgba(0, 136, 169, 0.8);
+		letter-spacing: 1px;
+		margin-bottom: 5px;
+	}
+	.our-team .post{
+		display: block;
+		font-size: 10px;
+		color: #24252a;
+	}
+	.our-team .email{
+		width: 100%;
+		padding: auto;
+		margin: 0;
+		position: absolute;
+		bottom: -20px;
+		left: 0;
+		transition: all 0.5s ease 0s;
+	}
+	.our-team:hover .email{
+		bottom: 5px;
+	}
+	
+	.team-table{
+		width:100%;
+		margin-right: 5%;
+		margin-left: 5%;
+		margin-top: 20px;
+		border-style: solid;
+		border-color: aqua;
+	}
+	
+	.vis-titles{
+		font-size: 17px;
+		font-family: "Montserrat", sans-serif;
+		color:  rgba(0, 136, 169, 0.8);
+		text-decoration: underline;
+		position: relative;
+		margin-left: 7%;
+		font-weight: bold;	
+		margin-top: 20px;
+	}
+	
+	.vis-images{
+		border-radius: 5px;
+		max-width: 15%;
+		height: auto;
+		
+	}
+	
+	.img {	
+		text-align: left;
+		height: auto;
+		border-radius: 10px;
+		width: 250px;
+		height: auto;
+		float: right;
+		justify-content: right;
+	}
+
+	iframe {
+		margin-bottom: 100px;
+	}
+	  
+	
+	#more {display: none;}
+	
+	@media(max-width: 90%){
+		.container{
+			flex-direction: column;
+		}
+		.our-team{
+			width: 90%;
+			margin-top: 30px;
+		}
+	}
 }
