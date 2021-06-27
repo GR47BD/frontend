@@ -197,6 +197,18 @@ body {
 	}
 }
 
+.tooltip {
+	padding: 4px 8px;
+	background: black;
+	position: fixed;
+	border-radius: 4px;
+	color: white;
+	font-size: 13px;
+	max-width: 300px;
+	text-align: center;
+	display: none;
+}
+
 .option-panel {
 	display: flex;
 	flex-direction: column;
@@ -247,6 +259,7 @@ body {
 			flex-direction: row;
 			align-items: center;
 			justify-content: space-between;
+			margin-bottom: 2px;
 
 			.key {
 				font-size: 12px;

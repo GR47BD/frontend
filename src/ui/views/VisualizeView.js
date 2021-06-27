@@ -49,6 +49,7 @@ export default class VisualizeView {
 							<StatisticsComponent main={main}></StatisticsComponent>
 						</DrawerComponent>
 					</DrawerContainerComponent>
+					<div class="tooltip" id="tooltip"></div>
 				</div>
             </div>
         );
