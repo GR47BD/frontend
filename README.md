@@ -27,7 +27,9 @@ The files are structured in a way that it is easy to build upon. The following i
 | |- webpack.dev.conf.js # The development webpack configuration and is merged with the base config
 | |- webpack.prod.conf.js # The production webpack configuration and is merged with the base config
 |- dist/ # When the site is built, the built files will be added to this folder
+|- node_modules/ # Contains the modules that can be used in the code, which are excluded from the git repo
 |- resources/ # Contains all the resources for this size, like fonts, images and styling sheets
+| |- images/ # Contains all the images used in the site
 | |- scss/ # Contains the styling sheets
 | | |- stylesheet.scss # The main styling sheet
 |- src/ # Contains the source code
@@ -35,10 +37,13 @@ The files are structured in a way that it is easy to build upon. The following i
 | | |- components/ # The individual components
 | | |- views/ # The different web pages or "views"
 | | |- handler.js # The file that handles the ui
+| |- visualize/ # All code to with organising the visualizations
+| |- DataHandler.js # Organizes the dataset
 | |- index.html # The html file, which will probably be the only html file we need
 | |- index.js # The main file, here the code is started (like the main function in Java)
 |- .babelrc # The configuration file for Babel
 |- .gitignore # Tells git which files to ignore, like the installed packages
+|- generator.js # A script to generate bigger datasets
 |- package-lock.json # An automatically generated file keeping track of the dependencies
 |- package.json # The configuration for NPM
 |- README.md # This file
