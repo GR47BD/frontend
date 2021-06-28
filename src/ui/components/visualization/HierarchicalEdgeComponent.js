@@ -113,6 +113,10 @@ export default class HierarchicalEdgeComponent extends Visualization {
 			.range(["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b","#e377c2","#7f7f7f","#bcbd22","#17becf"]);
 			// this is category10, not working tho
 
+		for(const title in jobMapping) {
+			jobMapping[title] += 1;
+		}
+
 		const pie = d3.pie()
 			.sort(null)
 			.value(d => d[1])
