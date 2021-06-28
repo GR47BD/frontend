@@ -6,15 +6,18 @@ import massiveSequenceImage from "../../../resources/images/massive-sequence-vie
 import profileImage from "../../../resources/images/download.png";
 
 export default class IndexView {
+    scrollToElement(id) {
+        const element = document.getElementById(id);
+        element.scrollIntoView(true);
+        window.scrollTo({top: element.getBoundingClientRect().top + window.pageYOffset - 150});
+    }
+
     view(vnode) {
+        if(vnode.attrs.scroll !== undefined) {
+            setTimeout(() => this.scrollToElement(vnode.attrs.scroll), 10);
+        }
         
         return (
-            // <div> 
-            //     {/* In the next line the component TestComponent is loaded in as HTML element */}
-            //     <NodeLinkDiagramComponent></NodeLinkDiagramComponent>
-            //     {/* The following line contains standard text. */} 
-            // </div>
-            //m(NodeLinkDiagramComponent, {main: vnode.attrs.main})
             <div class="view">
                 <MenuBarComponent></MenuBarComponent>
                 <div class="index-container">
@@ -30,7 +33,7 @@ export default class IndexView {
                         <h1>The visualizations</h1>
                     </div>
 
-                    <div class="vis-item">
+                    <div class="vis-item" id="node-link">
                         <div class="vis-title">The Node-link Diagram</div>
                         <div class="vis-content">
                             <img src={nodeLinkImage} class="img" /> 
@@ -38,7 +41,7 @@ export default class IndexView {
                         </div>
                     </div>
                    
-                    <div class="vis-item">
+                    <div class="vis-item" id="hierarchical-edge">
                         <div class="vis-title right">The Hierarchical Edge Bundling</div>
                         <div class="vis-content">
                             <div class="intro-text">A hierarchical edge bundling diagram is an undirected graph that consists of a set of nodes and a set of edges, each edge serving as a link between different nodes. In this paper a particular variant of this visualization method that positions the nodes around an arc is used. The nodes, which are the ’leaves’ of the data, or the ’children’ in the ’child-parent’-relation, are clustered by their parent-dependency. An edge is the line between a pair of nodes that represents a certain relationship or interaction that may arise between said nodes, in our case, the emails sent in the company. The nodes are clustered in a circle by their parent-relation in this case their job title. The edges are bundled in a manner that resembles a cable-like arrangement. This allows for a clear display of the connections, by reducing visual clutter, and also shows the relationships between different groups within the data set. Clicking a node selects it, along with its edges. The edges are colored depending on the direction of the connection – outgoing edges are red, incoming – green, and in case of a two-sided connection we have an orange-ish coloring. The nodes are colored in a similar manner. This ensures that the relation between different nodes is easily visible. Furthermore, each of the edges has an opacity property that corresponds to the sentiment of the email sent.</div>
@@ -46,7 +49,7 @@ export default class IndexView {
                         </div>
                     </div>
                     
-                    <div class="vis-item">
+                    <div class="vis-item" id="massive-sequence">
                         <div class="vis-title">The Massive Sequence View</div>
                         <div class="vis-content double">
                             <div class="intro-text">The massive sequence view diagram displays the nodes colored by their job title on the left along the y-axis and the selected timeframe along the x-axis. The blue lines displayed in the middle represent the emails sent between two distinct people – the start of the line being the first and the end being the second person. Hovering over any part of the visualization will highlight the relevant date. The diagram provides an easy and intuitive method of analyzing temporal and structural changes, and trends within the dataset.</div>

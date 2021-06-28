@@ -11,16 +11,16 @@ export default class VisualizationContainerComponent {
 
         return (
             <div class="visualization-container">
-				<VisualizationPanelComponent name="Node-Link Diagram" half={true}>
+				<VisualizationPanelComponent name="Node-Link Diagram" half={true} help="node-link">
 					<NodeLinkDiagramComponent main={main}></NodeLinkDiagramComponent>
 				</VisualizationPanelComponent>
-				<VisualizationPanelComponent name="Hierarchical Edge Bundling" half={true}>
+				<VisualizationPanelComponent name="Hierarchical Edge Bundling" half={true} help="hierarchical-edge">
 					<HierarchicalEdgeComponent main={main}></HierarchicalEdgeComponent>
 				</VisualizationPanelComponent>
 
 				<TimebarComponent main={main}></TimebarComponent>
 
-				<VisualizationPanelComponent name="Massive Sequence View" half={false}>
+				<VisualizationPanelComponent name="Massive Sequence View" half={false} help="massive-sequence">
 					<MassiveSequenceComponent main={main}></MassiveSequenceComponent>
 				</VisualizationPanelComponent>
 			</div>

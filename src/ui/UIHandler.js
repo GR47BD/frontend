@@ -12,9 +12,8 @@ export default class UIHandler {
 		// Here we route multiple views to their respective url handles. We then 'mount' this to
 		// the body, which means we add them as a child of the body.
 		m.route(document.body,  "/", {
-			"/": {view: () => {return m(IndexView, {main: this.main})}},
+			"/": {view: (vnode) => {return m(IndexView, {main: this.main, scroll: vnode.attrs.scroll})}},
 			"/visualize": {view: () => {return m(VisualizeView, {main: this.main})}}
-
 		});
 	}
 }
