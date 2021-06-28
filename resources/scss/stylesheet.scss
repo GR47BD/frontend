@@ -31,19 +31,41 @@ body {
 	width: 100vw;
 	height: $menubar-height;
 	background-color: $menu-back-col;
-	z-index: 100;
+	z-index: 20;
 
 	.logo {
 		order:1;
-		color:#fff;
-		text-transform: capitalize;
-		line-height: 50px;
-		margin-left: 10px;
-		font-size: 3.0em;
-		max-width: 100%;
-		padding: 20px;
-		font-weight: 400;
-		font-family: $f-family;
+		margin-left: 40px;
+		position: relative;
+
+		.image {
+			position: relative;
+			z-index: 23;
+		}
+
+		.effect {
+			position: absolute;
+			top: 0;
+			width: 230px;
+			height: 90px;
+			z-index: 21;
+			background: white;
+			overflow: hidden;
+
+			.circle {
+				width: 80px;
+				height: 80px;
+				background: $main-color;
+				border-radius: 50%;
+				z-index: 21;
+				position: relative;
+				visibility: hidden;
+
+				&.visible {
+					visibility: visible;
+				}
+			}
+		}
 	}
 
 	.links {
@@ -66,12 +88,10 @@ body {
 			font-size: 1.5em;
 			color: #edf0f1;
 			text-decoration: none;	
-			transition: all 0.3s ease 0s;
+			transition: color 0.3s ease 0s;
 
 			&:hover {
-				color: $main-color;
-				cursor: pointer;
-				transition: all 0.3s ease 0s;
+				color: $main-color
 			}
 		}
 	}
@@ -242,7 +262,13 @@ body {
 			svg {
 				fill: $text-col;
 				transform: rotate(90deg);
-				transition: .3s transform;
+				transition: .3s transform, .3s fill;
+			}
+
+			&:hover {
+				svg {
+					fill: darken($text-col, 20%);
+				}
 			}
 		}
 	}
@@ -406,8 +432,33 @@ body {
 	color: $menu-back-col;
 	margin-bottom: 20px;
 
-	.title {
-		color: $menu-back-col;
+	.header {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+
+		.title {
+			color: $menu-back-col;
+		}
+
+		.help {
+			margin: -6px;
+			padding: 2px 6px;
+			line-height: 19px;
+			height: 19px;
+			border: 1px solid $menu-back-col;
+			border-top-right-radius: $border-radius - 1px;
+			border-top-left-radius: 3px;
+			border-bottom-left-radius: 3px;
+			border-bottom-right-radius: 3px;
+			cursor: pointer;
+			background: $back-col;
+			transition: .3s background;
+
+			&:hover {
+				background: darken($back-col, 10%);
+			}
+		}
 	}
 
 	.content {
