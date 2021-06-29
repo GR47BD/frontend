@@ -61,6 +61,7 @@ export default class DataHandler {
         this.persons = {}
 
         this.selectedPersons = new Map();
+        this.higlightPerson = undefined;
 
         // Ratio between 0 and 1 in how much the data has changed since last updateTimed
         this.dataChangedAmount = undefined;

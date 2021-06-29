@@ -23,6 +23,8 @@ export default class MassiveSequenceComponent extends Visualization {
             gradientColor2: "#FFA500",
             gradientColor3: "#FFFF00",
             color: "#4682B4",
+            highlightedNodeColor: "#4682B4",
+            highlightedEdgeColor: "#000000",
             textColor: "#000000",
             textHoverColor: "#808080",
             indicatorColor: "#000000",
@@ -30,6 +32,8 @@ export default class MassiveSequenceComponent extends Visualization {
         }
 
         this.indicatorActive = false;
+        this.tooltipActive = false;
+        this.hoveredPerson = undefined;
     }
 
     // Is called when this component is initialized.
@@ -51,11 +55,37 @@ export default class MassiveSequenceComponent extends Visualization {
         this.canvas.addEventListener("mouseleave", () => {
             this.hovering = false;
             this.deactivateIndicator();
+            this.deactivateTooltip();
             this.step();
         });
         this.canvas.addEventListener("mousemove", e => {
             this.handleMouseMove(e.offsetX, e.offsetY);
         });
+        this.canvas.addEventListener("mousedown", () => {
+            if(this.tooltipActive && this.hoveredPerson !== undefined) {
+                this.main.dataHandler.highlightPerson = this.hoveredPerson.id;
+
+                if(this.main.dataHandler.selectedPersons.has(this.hoveredPerson.id)) {
+                    this.main.dataHandler.selectedPersons.delete(this.hoveredPerson.id);
+                }
+                else {
+                    this.main.dataHandler.selectedPersons.set(this.hoveredPerson.id, this.hoveredPerson);
+                }
+
+                this.main.visualizer.step();
+
+                document.getElementById("msv-tooltip").style.textDecoration = "underline";
+            }
+        });
+        this.canvas.addEventListener("mouseup", () => {
+            document.getElementById("msv-tooltip").style.textDecoration = "initial";
+
+            if(this.tooltipActive) {
+                this.main.dataHandler.highlightPerson = undefined;
+
+                this.main.visualizer.step();
+            }
+        })
         
         new ResizeObserver(() => this.step()).observe(this.canvas.parentElement.parentElement.parentElement.parentElement);
         
@@ -78,13 +108,48 @@ export default class MassiveSequenceComponent extends Visualization {
         this.indicatorActive = false;
     }
 
+    activateTooltip() {
+        document.getElementById("msv-tooltip").classList.remove("inactive");
+        this.tooltipActive = true;
+    }
+
+    deactivateTooltip() {
+        document.getElementById("msv-tooltip").classList.add("inactive");
+        this.tooltipActive = false;
+        this.hoveredPerson = undefined;
+    }
+
     // Is called with an x and y if the mouse is moved over the component.
     handleMouseMove(x, y) {
-        if(x >= this.sizes.personsWidth && !this.indicatorActive) {
+        if(x > this.sizes.personsWidth && !this.indicatorActive) {
             this.activateIndicator();
         }
-        else if(x < this.sizes.personsWidth && this.indicatorActive) {
+        else if(x <= this.sizes.personsWidth && this.indicatorActive) {
             this.deactivateIndicator();
+        }
+
+        if((x <= this.sizes.personsWidth && y < this.sizes.personHeight*this.order.size) && !this.indicatorActive) {
+            this.activateTooltip();
+        }
+        else if((x > this.sizes.personsWidth || y >= this.sizes.personHeight*this.order.size) && this.indicatorActive) {
+            this.deactivateTooltip();
+        }
+
+        if(this.tooltipActive) {
+            const id = Array.from(this.order.keys()).find(key => this.order.get(key) === Math.floor(y/this.sizes.personHeight));
+            const person = this.persons.find(person => person.id === id);
+
+            const tooltip = document.getElementById("msv-tooltip");
+            tooltip.innerText = this.main.dataHandler.emailToName(person.email);
+            const bounds = tooltip.getBoundingClientRect();
+            tooltip.style.left = `0px`;
+            tooltip.style.top = `${this.order.get(id) * this.sizes.personHeight + this.sizes.personHeight / 2 - bounds.height / 2}px`;
+            tooltip.style.background = this.scale(person.jobtitle);
+
+            if(this.main.dataHandler.selectedPersons.has(id)) tooltip.style.fontWeight = "bold";
+            else tooltip.style.fontWeight = "normal";
+
+            this.hoveredPerson = person;
         }
 
         // Change mouse indicator position when the indicator is active.
@@ -118,13 +183,31 @@ export default class MassiveSequenceComponent extends Visualization {
         console.log(`update in ${endTime-startTime}ms`);
     }
 
+    // Is called by the visualizer when the data is updated.
+    update(){
+        super.update();
+
+        this.persons = this.main.dataHandler.getPersons();
+        this.order = this.dataClusterer.sortDataByClusters();
+        this.jobtitles = this.main.dataHandler.getJobTitles();
+        this.scale = d3.scaleOrdinal(d3.schemeCategory10);
+        this.scale.domain(this.jobtitles);
+        this.step();
+    }
+
     // Draws the persons part of the visualization.
     drawPersons() {
         for(const person of this.persons) {
+            const selected = this.main.dataHandler.selectedPersons.has(person.id);
             const y = this.order.get(person.id) * this.sizes.personHeight;
 
+            if(selected) {
+                this.graphics.fillStyle = this.styleOptions.highlightedNodeColor;
+                this.graphics.fillRect(0, y-1, this.sizes.personsWidth+2, this.sizes.personHeight+1);
+            }
+
             this.graphics.fillStyle = this.scale(person.jobtitle);
-            this.graphics.fillRect(0, y, this.sizes.personsWidth, this.sizes.personHeight-1);
+            this.graphics.fillRect(1, y, this.sizes.personsWidth, this.sizes.personHeight-1);
         }
     }
 
@@ -161,7 +244,10 @@ export default class MassiveSequenceComponent extends Visualization {
 
             this.graphics.globalAlpha = this.styleOptions.alpha;
 
-            if(this.styleOptions.useGradient) {
+            if(this.main.dataHandler.highlightPerson === email.fromId || this.main.dataHandler.highlightPerson === email.toId) {
+                this.graphics.fillStyle = this.styleOptions.highlightedEdgeColor;
+            }
+            else if(this.styleOptions.useGradient) {
                 const gradient = this.graphics.createLinearGradient(0, edgeY + y, 0, edgeHeight + edgeY + y);
 
                 if(y1 >= y2) {
@@ -174,6 +260,7 @@ export default class MassiveSequenceComponent extends Visualization {
                     gradient.addColorStop(0.5, this.styleOptions.gradientColor2);
                     gradient.addColorStop(1, this.styleOptions.gradientColor1);
                 }
+
                 this.graphics.fillStyle = gradient;
             }
             else {
@@ -183,18 +270,6 @@ export default class MassiveSequenceComponent extends Visualization {
             this.graphics.fillRect(x + edgeX, y + edgeY, 1, edgeHeight);
             this.graphics.globalAlpha = 1;
         }
-    }
-
-    // Is called by the visualizer when the data is updated.
-    update(){
-        super.update();
-
-        this.persons = this.main.dataHandler.getPersons();
-        this.order = this.dataClusterer.sortDataByClusters();
-        this.jobtitles = this.main.dataHandler.getJobTitles();
-        this.scale = d3.scaleOrdinal(d3.schemeCategory10);
-        this.scale.domain(this.jobtitles);
-        this.step();
     }
 
     // Approximates the x value of the given date between a specified start and end date for a given width.
@@ -221,6 +296,7 @@ export default class MassiveSequenceComponent extends Visualization {
                     <div class="line" id="massive-sequence-indicator-line"></div>
                     <div class="date" id="massive-sequence-indicator-date">AB-AB-AB</div>
                 </div>
+                <div class="msv-tooltip inactive" id="msv-tooltip"></div>
             </div>
         );
     }

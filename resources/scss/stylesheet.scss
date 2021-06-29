@@ -618,6 +618,17 @@ body {
 			left: -12px;
 		}
 	}
+
+	.msv-tooltip {
+		position: absolute;
+		padding: 4px 8px;
+		pointer-events: none;
+		cursor: pointer;
+
+		&.inactive {
+			display: none;
+		}
+	}
 }
 
 .node:hover {
