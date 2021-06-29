@@ -72,7 +72,8 @@ export default class MassiveSequenceComponent extends Visualization {
                     this.main.dataHandler.selectedPersons.set(this.hoveredPerson.id, this.hoveredPerson);
                 }
 
-                this.main.visualizer.step();
+                this.main.visualizer.changeSelection();
+                this.main.statistics.update();
 
                 document.getElementById("msv-tooltip").style.textDecoration = "underline";
             }
@@ -83,7 +84,7 @@ export default class MassiveSequenceComponent extends Visualization {
             if(this.tooltipActive) {
                 this.main.dataHandler.highlightPerson = undefined;
 
-                this.main.visualizer.step();
+                this.main.visualizer.changeSelection();
             }
         })
         
@@ -192,6 +193,10 @@ export default class MassiveSequenceComponent extends Visualization {
         this.jobtitles = this.main.dataHandler.getJobTitles();
         this.scale = d3.scaleOrdinal(d3.schemeCategory10);
         this.scale.domain(this.jobtitles);
+        this.step();
+    }
+
+    changeSelection() {
         this.step();
     }
 

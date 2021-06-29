@@ -91,11 +91,9 @@ export default class NodeLinkDiagramComponent extends Visualization {
     }
 
     oncreate() {
-
         if(!this.main.visualizer.getVisualization('NodeLinkDiagram')) {
 			this.main.visualizer.addVisualization('NodeLinkDiagram', this);
 		}
-
 
         let node_link_diagram = d3.select('#node_link_diagram');
         node_link_diagram.attr('class', 'svg-container');
@@ -123,7 +121,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.drawnEdges = this.svg.append('g').attr("class", "edge").selectAll('line');
         this.drawnNodes = this.svg.append('g').attr("class", "node").selectAll('circle').on('mousedown', (event) => {
             if(!event.ctrlKey){
-                console.log(event)
                 this.main.dataHandler.clearSelectedPersons();
                 for(let node in this.clickedNodes){
                     this.main.dataHandler.addSelectedPerson(super.formatNodeForSelection(node));
@@ -154,23 +151,27 @@ export default class NodeLinkDiagramComponent extends Visualization {
      */
     update(recalculateForces = false){
 		if(this.main.dataHandler.allDatasets.length === 0) {
-            console.log('no data');
             return;
         }
-        console.log('update');
+        
         if(this.simulation === undefined) return this.oncreate();
         
         //If recalculate forces is equal to true then the datachangedAmunt should be 1 else it will be based on the datahandler.
         let dataChangedAmount = recalculateForces ? 1 : this.main.dataHandler.dataChangedAmount;          
 
         //If the data has changed in the datahandler the data should be updated
-        if(this.main.dataHandler.dataChanged){
-            console.log('dataChanged')
+        if(this.main.dataHandler.dataChanged) {
             this.updateData(dataChangedAmount);
+        }
 
-        }  
-
-        // console.log(this.nodes);
+        if(this.main.dataHandler.highlightPerson !== undefined) {
+			const person = this.main.dataHandler.getPersons().find(person => person.id === this.main.dataHandler.highlightPerson);
+            
+            this.selectEdges(person);
+		}
+		else {
+			this.deselectEdges();
+		}
 
         this.updateSimulation(dataChangedAmount);    
         this.updateForces();
@@ -193,7 +194,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.drawnEdges.data(this.edges).enter().append('line');
 
         // Set node data
-
         this.simulation.nodes(this.nodes);
         // Remove any old nodes that were previously drawn in the DOM
         this.drawnNodes.data(this.nodes).exit().remove();
@@ -219,22 +219,8 @@ export default class NodeLinkDiagramComponent extends Visualization {
             .attr('class', 'node')
 
         this.drawnEdges.attr('class', '.edge');
-   
-
-        // if(this.main.dataHandler.dataChanged){            
-        //     let newAlpha = (dataChangedAmount * (0.7 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget + this.simulationSettings.finalPositionThreshold;
-        //     let resetSimulationThreshold = 0.01;
-        //     if(this.simulationSettings.alphaTarget - newAlpha > resetSimulationThreshold){
-        //         console.log('newAlpha = ' + newAlpha);
-        //         this.simulation.alpha(newAlpha);
-                
-        //     }
-        //     // this.simulation.restart();        
-        // } 
 
         this.simulation.on('tick', () => {
-           
-
             this.updateDrawnNodes();
             this.updateDrawnEdges();
         });
@@ -244,22 +230,20 @@ export default class NodeLinkDiagramComponent extends Visualization {
      * This function updates all forces for the simulation that are based on changing variables.
      */
     updateForces(){
-        const linkStrength = this.linkForce.basis - (this.edges.length / this.linkForce.divider) * this.linkForce.penalty;
         const centerStrength = this.centerForce.basis - (this.edges.length / this.centerForce.divider) * this.centerForce.penalty;
 
         this.simulation.force('link').links(this.edges); 
-
 
         let weightScale = d3.scaleLinear().domain(d3.extent(this.edges, (edge) => this.maxNrEdges - edge.nr)).range([.1, 2])
         this.simulation.force('link').strength(edge => weightScale(edge.nr));
 
         this.simulation.force('center').strength(centerStrength)
         this.simulation.force('collide', d3.forceCollide(node => {
-                    if(node.nodes === undefined) return this.collideForce.minRadius;
-                    else return this.normalizeValue(node.nodes.length, this.maxNrNodes, this.collideForce.minRadius, this.collideForce.maxRadius);
-                })
-                .strength(this.collideForce.strength)
-                .iterations(this.collideForce.iterations));
+                if(node.nodes === undefined) return this.collideForce.minRadius;
+                else return this.normalizeValue(node.nodes.length, this.maxNrNodes, this.collideForce.minRadius, this.collideForce.maxRadius);
+            })
+            .strength(this.collideForce.strength)
+            .iterations(this.collideForce.iterations));
 
     }
 
@@ -276,20 +260,14 @@ export default class NodeLinkDiagramComponent extends Visualization {
             }
             this.groupData();
         }
-        
-        console.log('inside updateData'+ this.simulation.alpha());
            
         let newAlpha = (dataChangedAmount * (0.7 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget + this.simulationSettings.finalPositionThreshold;
         let resetSimulationThreshold = 0.001;
-        // console.log(newAlpha + ', ' + (resetSimulationThreshold + this.simulationSettings.alphaTarget));
+        
         if(newAlpha > resetSimulationThreshold + this.simulationSettings.alphaTarget){
-            // console.log(' updateData ' + newAlpha);
-            
             this.simulation.alpha(newAlpha);
-            
         }
-     
-        // let newAlpha = (dataChangedAmount * (0.5 - this.simulationSettings.alphaTarget)) + this.simulationSettings.alphaTarget;
+
         this.simulation.alpha(newAlpha);
     }
 
@@ -299,19 +277,12 @@ export default class NodeLinkDiagramComponent extends Visualization {
      * needs to be kept and the data that needs to be added.
      */
     updateNodes(){
-
-        // if(this.simulation.alpha() <= this.simulationSettings.alphaTarget + this.simulationSettings.finalPositionThreshold){
-        //     this.nodes = [...this.previousNodes];
-        // }
-
-
         const persons = this.main.dataHandler.getPersons();
-        
         let newNodes = [];
 
         this.nodes = this.compareLists(this.nodes, persons, true);
-        newNodes = this.compareLists(persons, this.nodes);
 
+        newNodes = this.compareLists(persons, this.nodes);
         newNodes = newNodes.map(node => {
             return {
                 id: node.id,
@@ -325,7 +296,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         this.nodes.push(...newNodes);            
 
-        console.log(this.previousNodes);
         this.personsIndex = new Map();
         for(let i = 0; i < this.nodes.length; i++){
             this.personsIndex.set(this.nodes[i].id, i);
@@ -360,8 +330,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 highlighted: false
             }
         });
-
-        // this.removeDuplicateEdges
     }
 
     /**
@@ -599,7 +567,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
      * This function updates the values of the displayed edges in the visualization
      */
     updateDrawnEdges() {
-
         this.drawnEdges.attr('x1', (edge) => {
                 return edge.source.x;
             })
@@ -620,7 +587,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             })
             .attr('stroke-width', edge => {
                 return edge.highlighted ? this.edgeOptions.highlightedStrokeWidth : this.edgeOptions.strokeWidth;
-            })
+            });
     }
 
     /**
@@ -654,12 +621,16 @@ export default class NodeLinkDiagramComponent extends Visualization {
             this.groupNode(node);
         }
         else{
+            this.main.dataHandler.highlightPerson = node.id;
             this.toggleNodeSelection(node);
         }        
     }
 
     mouseUpNode(node){
         this.deselectEdges();
+        this.main.dataHandler.highlightPerson = undefined;
+        
+        this.main.visualizer.changeSelection();
     }
 
     groupNode(node){
@@ -762,7 +733,9 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     view() {
         return (
-            <div id='node_link_diagram' ></div>
+            <div id='node_link_diagram'>
+                <div class="nld-tooltip inactive" id="nld-tooltip"></div>
+            </div>
         );
     }
 

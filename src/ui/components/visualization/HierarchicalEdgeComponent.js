@@ -138,8 +138,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
 			.attr('fill', d => color(d.data[0]))
 			.attr("stroke", "#24252a")
 			.style("stroke-width", "0px") // Padding between slices
-			.style("opacity", 1)
-			.on('mousedown', function(d) {console.log(d.data)} );
+			.style("opacity", 1);
 
 		//this.svg
 		//	.selectAll('arc')
@@ -163,7 +162,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
 		if(this.main.dataHandler.data.length === 0) return;
         if(this.cluster === undefined) return this.oncreate();
 
-		const persons = this.main.dataHandler.getPersons('all');
+		this.persons = this.main.dataHandler.getPersons('all');
 		const mapping = new Map();
 		const holder = this.main.dataHandler;
 
@@ -172,7 +171,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
 			.radius(d => d.y)
 			.angle(d => d.x / 180 * Math.PI);
 
-		for(const person of persons) {
+		for(const person of this.persons) {
 			mapping.set(person.id, {
 				"name": "job." + person.jobtitle + "." + holder.emailToName(person.email),
 				"size": 1,
@@ -224,6 +223,15 @@ export default class HierarchicalEdgeComponent extends Visualization {
 		const root = this.packageHierarchy(classes)
 			.sum(d => d.size);
 		this.cluster(root);
+
+		if(this.main.dataHandler.highlightPerson !== undefined) {
+			const person = this.persons.find(person => person.id === this.main.dataHandler.highlightPerson);
+			
+			this.highlighted.set(`job.${person.jobtitle}.${this.main.dataHandler.emailToName(person.email)}`, true);
+		}
+		else {
+			this.highlighted = new Map();
+		}
 
 		// Create the links
 		this.svg.selectAll(".hier-stroke").remove();
@@ -313,7 +321,8 @@ export default class HierarchicalEdgeComponent extends Visualization {
 		else{
 			this.main.dataHandler.removeSelectedPerson(node.data);
 		}
-		this.highlighted.set(node.data.name, true)
+		this.highlighted.set(node.data.name, true);
+		this.main.dataHandler.highlightPerson = node.data.id;
 		//this.update();
 		this.main.visualizer.changeSelection();
 		this.main.statistics.update();
@@ -321,8 +330,10 @@ export default class HierarchicalEdgeComponent extends Visualization {
 	}
 
 	mouseOutNode(node){
-		this.highlighted.set(node.data.name, false)
-		this.update();
+		this.highlighted.set(node.data.name, false);
+		this.main.dataHandler.highlightPerson = undefined;
+		this.main.visualizer.changeSelection();
+        this.main.statistics.update();
 	}
 
 	changeSelection(){
