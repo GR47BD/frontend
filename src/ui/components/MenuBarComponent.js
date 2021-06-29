@@ -11,7 +11,6 @@ export default class MenuBarComponent {
 	}
 
 	moveCircle(x, y) {
-		console.log(x, y);
 		x = x - this.size / 2;
 		y = y - this.size / 2;
 

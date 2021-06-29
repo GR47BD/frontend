@@ -678,6 +678,20 @@ rect.selection {
 	color: #aaa;
 }
 
+#node_link_diagram {
+	position: relative;
+
+	.nld-tooltip {
+		position: absolute;
+		z-index: 10;
+		padding: 4px 8px;
+
+		&.inactive {
+			display: none;
+		}
+	}
+}
+
 .index-container {
 	margin-top: $menubar-height;
 	background: $back-col;

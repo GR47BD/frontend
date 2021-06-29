@@ -608,11 +608,18 @@ export default class NodeLinkDiagramComponent extends Visualization {
         return selected;        
     }
 
-    mouseOverNode(node){
-        //Nothing needs to happen right now
+    mouseOverNode(node) {
+        const bounds = document.getElementById("node_link_diagram").getBoundingClientRect();
+        const tooltip = document.getElementById("nld-tooltip");
+        tooltip.classList.remove("inactive");
+        tooltip.innerText = this.main.dataHandler.emailToName(node.name.email);
+        tooltip.style.top = `${(bounds.height / this.dimensions.height) * node.y - tooltip.getBoundingClientRect().height / 2}px`;
+        tooltip.style.left = `${(bounds.width / this.dimensions.width) * node.x - tooltip.getBoundingClientRect().width - 10}px`;
+        tooltip.style.background = this.scale(node.jobtitle);
     }
 
     mouseOutNode(node){
+        document.getElementById("nld-tooltip").classList.add("inactive");
         this.deselectEdges();
     }
 
@@ -729,7 +736,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     //This function can be used to normalize a value
     normalizeValue = (amount, maxAmount, minValue, maxValue) => (amount) / (maxAmount) * (maxValue - minValue) + minValue;
-
 
     view() {
         return (

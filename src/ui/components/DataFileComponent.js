@@ -21,8 +21,7 @@ export default class DataFileComponent {
         remover.addEventListener("click", () => {
             this.main.selectDataFile.remove(this.name);
             this.main.dataHandler.remove(this.name);
-            remover.parentNode.parentNode
-            .removeChild(remover.parentNode);
+            remover.parentNode.parentNode.removeChild(remover.parentNode);
         });
     }
 
