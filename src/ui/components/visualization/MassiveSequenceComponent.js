@@ -63,7 +63,8 @@ export default class MassiveSequenceComponent extends Visualization {
         });
         this.canvas.addEventListener("mousedown", () => {
             if(this.tooltipActive && this.hoveredPerson !== undefined) {
-                this.main.dataHandler.highlightPerson = this.hoveredPerson.id;
+                this.main.dataHandler.highlightPersons = [];
+                this.main.dataHandler.highlightPersons.push(this.hoveredPerson.id);
 
                 if(this.main.dataHandler.selectedPersons.has(this.hoveredPerson.id)) {
                     this.main.dataHandler.selectedPersons.delete(this.hoveredPerson.id);
@@ -82,7 +83,7 @@ export default class MassiveSequenceComponent extends Visualization {
             document.getElementById("msv-tooltip").style.textDecoration = "initial";
 
             if(this.tooltipActive) {
-                this.main.dataHandler.highlightPerson = undefined;
+                this.main.dataHandler.highlightPersons = undefined;
 
                 this.main.visualizer.changeSelection();
             }
@@ -249,9 +250,18 @@ export default class MassiveSequenceComponent extends Visualization {
 
             this.graphics.globalAlpha = this.styleOptions.alpha;
 
-            if(this.main.dataHandler.highlightPerson === email.fromId || this.main.dataHandler.highlightPerson === email.toId) {
-                this.graphics.fillStyle = this.styleOptions.highlightedEdgeColor;
+            if(this.main.dataHandler.highlightPersons !== undefined){
+                for(let person of this.main.dataHandler.highlightPersons){
+                    if(person === email.fromId || person === email.toId) {
+                        this.graphics.fillStyle = this.styleOptions.highlightedEdgeColor;
+                        break;
+                    }
+                    else {
+                        this.graphics.fillStyle = this.styleOptions.color;
+                    }
+                }
             }
+
             else if(this.styleOptions.useGradient) {
                 const gradient = this.graphics.createLinearGradient(0, edgeY + y, 0, edgeHeight + edgeY + y);
 

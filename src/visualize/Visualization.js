@@ -31,7 +31,7 @@ export default class Visualization {
             node.emailsSent = [];
             node.emailsReceived = [];
             let emails = this.main.dataHandler.getEmailsForPerson(node.id);
-            console.log(emails);
+
             emails.forEach(email => {
                 if(email.fromId === node.id){
                     node.emailsSent.push(this.formatEmail(email));

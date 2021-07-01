@@ -50,6 +50,7 @@ export default class Visualizer {
         for(const visualization of this.visualizations.values()) {
             visualization.step();
         }
+        this.main.dataHandler.dataChanged = false;
     }
 
     changeSelection(){

@@ -165,6 +165,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         //If the data has changed in the datahandler the data should be updated
         if(this.main.dataHandler.dataChanged) {
+            console.log("dataChanged")
             this.updateData(dataChangedAmount);
         }
 
@@ -174,19 +175,20 @@ export default class NodeLinkDiagramComponent extends Visualization {
     }
 
     changeSelection(){
-        if(this.main.dataHandler.highlightPerson !== undefined || this.edgesAreSelected) {
-
-
-            let person = this.groupedNodes.get(this.main.dataHandler.highlightPerson);
-            if(person !== undefined){
-                this.selectEdges(person);
+        if(this.main.dataHandler.highlightPersons !== undefined && !this.edgesAreSelected) {
+            console.log("select")
+            for(let person of this.main.dataHandler.highlightPersons){
+                let node = this.groupedNodes.get(person);
+                console.log(node)
+                if(node !== undefined){
+                    this.selectEdges(node);
+                }
             }
-            
-            this.edgesAreSelected = false;
 		}
-		else {
+		if (!this.edgesAreSelected) {
+            console.log("deselect edges")
 			this.deselectEdges();
-		}
+		} else this.edgesAreSelected = false;
         this.update();
     }
 
@@ -642,7 +644,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     mouseUpNode(node){
         this.deselectEdges();
-        this.main.dataHandler.highlightPerson = undefined;
+        this.main.dataHandler.highlightPersons = undefined;
         
         this.main.visualizer.changeSelection();
     }
@@ -660,12 +662,15 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     toggleNodeSelection(node){
         if(node.nodes === undefined){
-            this.main.dataHandler.highlightPerson = node.id;
+            this.main.dataHandler.highlightPersons = [];
+            this.main.dataHandler.highlightPersons.push(node.id);
             if(!this.main.dataHandler.personIsSelected(node)) this.addSelectedNode(node);
             else this.removeSelectedNode(node);
         }
         else{            
+            this.main.dataHandler.highlightPersons = [];
             for(let singleNode of node.nodes){
+                this.main.dataHandler.highlightPersons.push(singleNode.id);
                 if(node.groupIsSelected) this.removeSelectedNode(singleNode);
                 else if(!this.main.dataHandler.personIsSelected(singleNode)) this.addSelectedNode(singleNode)
             }
@@ -693,6 +698,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.edgesAreSelected = true;
 
         let adjacentEdges = this.edges.filter(edge => edge.source.id === node.id || edge.target.id === node.id);
+        console.log(adjacentEdges);
 
         for(let edge of adjacentEdges){
             this.edgesToHighlight.push(edge.source.id + '.' + edge.target.id);       

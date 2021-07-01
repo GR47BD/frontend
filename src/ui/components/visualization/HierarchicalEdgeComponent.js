@@ -180,10 +180,15 @@ export default class HierarchicalEdgeComponent extends Visualization {
 		this.cluster(root);
 
 
-		if (this.main.dataHandler.highlightPerson !== undefined) {
-			const person = this.persons.find(person => person.id === this.main.dataHandler.highlightPerson);
-
-			this.highlighted.set(`job.${person.jobtitle}.${this.main.dataHandler.emailToName(person.email)}`, true);
+		if (this.main.dataHandler.highlightPersons !== undefined) {
+			console.log(this.main.dataHandler.highlightPersons);
+			for(let person of this.main.dataHandler.highlightPersons){
+				const node = this.persons.find(currentPerson => currentPerson.id === person);
+				console.log(node);
+                if(node !== undefined){
+					this.highlighted.set(`job.${node.jobtitle}.${this.main.dataHandler.emailToName(node.email)}`, true);
+                }
+            }
 		}
 		else {
 			this.highlighted = new Map();
@@ -334,7 +339,8 @@ export default class HierarchicalEdgeComponent extends Visualization {
 			this.main.dataHandler.removeSelectedPerson(node.data);
 		}
 		this.highlighted.set(node.data.name, true);
-		this.main.dataHandler.highlightPerson = node.data.id;
+		this.main.dataHandler.highlightPersons = [];
+		this.main.dataHandler.highlightPersons.push(node.data.id);
 		//this.update();
 		this.main.visualizer.changeSelection();
 		this.main.statistics.update();
@@ -343,7 +349,7 @@ export default class HierarchicalEdgeComponent extends Visualization {
 
 	mouseOutNode(node) {
 		this.highlighted.set(node.data.name, false);
-		this.main.dataHandler.highlightPerson = undefined;
+		this.main.dataHandler.highlightPersons = undefined;
 		this.main.visualizer.changeSelection();
 		this.main.statistics.update();
 	}
