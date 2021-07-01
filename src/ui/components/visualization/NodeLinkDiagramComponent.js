@@ -160,8 +160,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
             return this.oncreate();
         }
 
-
-
         //If recalculate forces is equal to true then the datachangedAmunt should be 1 else it will be based on the datahandler.
         let dataChangedAmount = recalculateForces ? 1 : this.main.dataHandler.dataChangedAmount;          
 
@@ -170,21 +168,25 @@ export default class NodeLinkDiagramComponent extends Visualization {
             this.updateData(dataChangedAmount);
         }
 
-        if(this.main.dataHandler.highlightPerson !== undefined) {
-            const person = this.groupedNodes.get(this.main.dataHandler.highlightPerson);
-            
-            this.selectEdges(person);
-		}
-		else {
-			this.deselectEdges();
-		}
-
         this.updateSimulation(dataChangedAmount);    
         this.updateForces();
         super.update();
     }
 
     changeSelection(){
+        if(this.main.dataHandler.highlightPerson !== undefined || this.edgesAreSelected) {
+
+
+            let person = this.groupedNodes.get(this.main.dataHandler.highlightPerson);
+            if(person !== undefined){
+                this.selectEdges(person);
+            }
+            
+            this.edgesAreSelected = false;
+		}
+		else {
+			this.deselectEdges();
+		}
         this.update();
     }
 
@@ -293,7 +295,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
             return {
                 id: node.id,
                 jobtitle: node.jobtitle,
-                name: persons.find(person => person.email === node.email),
+                name: this.main.dataHandler.emailToName(node.email),
                 highlighted: false,
                 x: this.dimensions.width / 2,
                 y: this.dimensions.height / 2
@@ -618,7 +620,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         const bounds = document.getElementById("node_link_diagram").getBoundingClientRect();
         const tooltip = document.getElementById("nld-tooltip");
         tooltip.classList.remove("inactive");
-        tooltip.innerText = this.main.dataHandler.emailToName(node.name.email);
+        tooltip.innerText = node.nodes === undefined ? node.name : node.jobtitle;
         tooltip.style.top = `${(bounds.height / this.dimensions.height) * node.y - tooltip.getBoundingClientRect().height / 2}px`;
         tooltip.style.left = `${(bounds.width / this.dimensions.width) * node.x - tooltip.getBoundingClientRect().width - 10}px`;
         tooltip.style.background = this.scale(node.jobtitle);
@@ -634,7 +636,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
             this.groupNode(node);
         }
         else{
-            this.main.dataHandler.highlightPerson = node.id;
             this.toggleNodeSelection(node);
         }        
     }
@@ -659,6 +660,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     toggleNodeSelection(node){
         if(node.nodes === undefined){
+            this.main.dataHandler.highlightPerson = node.id;
             if(!this.main.dataHandler.personIsSelected(node)) this.addSelectedNode(node);
             else this.removeSelectedNode(node);
         }
@@ -688,11 +690,13 @@ export default class NodeLinkDiagramComponent extends Visualization {
     }
 
     selectEdges(node){
-        let adjacentEdges = [...node.emailsReceived, ...node.emailsSent]
+        this.edgesAreSelected = true;
+
+        let adjacentEdges = this.edges.filter(edge => edge.source.id === node.id || edge.target.id === node.id);
 
         for(let edge of adjacentEdges){
-            this.edgesToHighlight.push(edge.ids.source + '.' + edge.ids.target);       
-            this.groupedEdges.get(edge.ids.source + '.' + edge.ids.target).highlighted = true;
+            this.edgesToHighlight.push(edge.source.id + '.' + edge.target.id);       
+            this.groupedEdges.get(edge.source.id + '.' + edge.target.id).highlighted = true;
         }
     }
     
