@@ -39,13 +39,11 @@ export default class DataHandler {
             endTime: undefined
         });
         /**
-         * The sentiment values and 
+         * The sentiment values of current dataset
          */
         this.sentiment = {
-            minSentiment: undefined,
-            maxSentiment: undefined,
-            startSentiment: undefined,
-            endSentiment: undefined
+            minSentiment: 0,
+            maxSentiment: 0
         };
         /**
          * The job titles for each list of data
@@ -103,6 +101,7 @@ export default class DataHandler {
      */
     chooseDifferentDataset(name) {
         this.selectedDataset = name;
+        this.unsetSentiment();
         this.main.applyFilter.newData();
         this.data = this.allDatasets.filter(item => item.origin === name);
         this.update();
@@ -146,7 +145,7 @@ export default class DataHandler {
 
         for(const item of this.data) {
             if(!this.meetsFilters(item)) continue;
-
+            this.setSentiment(item);
             this.filteredData.push(item);
         }
 
@@ -588,6 +587,25 @@ export default class DataHandler {
 
         return statistics;
     }
+
+
+    /**
+     * A new function for the sentiment slider
+     * sets sentiment values of sentiment object
+     */
+    setSentiment(item) {
+        if(item.sentiment < this.sentiment.minSentiment) {
+            this.sentiment.minSentiment = item.sentiment;
+        } else if(item.sentiment > this.sentiment.maxSentiment) {
+            this.sentiment.maxSentiment = item.sentiment;
+        }
+    }
+
+    unsetSentiment() {
+        this.sentiment.maxSentiment = 0;
+        this.sentiment.minSentiment = 0;
+    }
+
 
     /**
      * A new function for the multiselectors

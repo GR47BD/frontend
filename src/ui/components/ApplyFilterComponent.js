@@ -1,6 +1,6 @@
 import m from "mithril";
 import MultiSelectorComponent from "@/ui/components/MultiSelectorComponent";
-import SliderComponent from "./SliderComponent";
+import SliderComponent from "@/ui/components/SliderComponent";
 
 export default class ApplyFilterComponent {
     oninit(vnode) {
@@ -31,6 +31,11 @@ export default class ApplyFilterComponent {
         let filterarray = this.main.dataHandler.filters;
         this.main.dataHandler.filters = filterarray.filter((filter) => {return !filter.options});
         for (let [key,value] of this.availableFilters) {
+            if (key === 'sentiment') {
+                this.main.dataHandler.filters.push({type: 2, value: value.getMin(), column: key, options: true});
+                this.main.dataHandler.filters.push({type: 1, value: value.getMax(), column: key, options: true});
+                continue;
+            }
             if(value.selectedFilters().length === 0) continue;
             this.main.dataHandler.filters.push({type: 3, value: value.selectedFilters(), column: key, options: true});
         }

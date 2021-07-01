@@ -8,7 +8,6 @@ export default class SliderComponent {
         this.main = main;
         this.name = name;
         this.index = index;
-        this.main.sentimentSlider = this;
     }
 
     oncreate() {
@@ -17,7 +16,7 @@ export default class SliderComponent {
         const filterSelector = document.getElementById("filterSelector");
         this.sentiment = this.main.dataHandler.sentiment;
 		this.slider = noUiSlider.create(sliderElement, {
-			start: [this.sentiment.startSentiment, this.sentiment.endSentiment],
+            start: [this.sentiment.minSentiment, this.sentiment.maxSentiment],
 			connect: true,
             tooltips: [true, true],
 			range: {
@@ -34,16 +33,16 @@ export default class SliderComponent {
         });
     }
 
-    update() {
-        this.slider.updateOptions();
+    getMin () {
+        const sliderElement = document.getElementById(this.name);
+        return sliderElement.noUiSlider.get(true)[0];
     }
 
-
-    selectedFilters() {
-        const selector = document.getElementById(this.name);
-        let filters = [].filter.call(selector.options, option => option.selected).map(option => option.text);
-        return filters;
+    getMax() {
+        const sliderElement = document.getElementById(this.name);
+        return sliderElement.noUiSlider.get(true)[1];
     }
+
 
     view () {
         return [m("div", {className: "filter-item-top"}, [m("span", {className: "filter-item-title"}, this.name), m("span", {id: this.name + "_button", className: "filter-item-button"},"X")]), m("div", {id: this.name, className: "slidebar"})];
