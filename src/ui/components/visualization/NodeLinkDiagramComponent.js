@@ -1,7 +1,6 @@
 import m from "mithril";
 import * as d3 from "d3";
 import Visualization from "@/visualize/Visualization";
-import { group, select } from "d3";
 
 
 export default class NodeLinkDiagramComponent extends Visualization {
@@ -110,6 +109,9 @@ export default class NodeLinkDiagramComponent extends Visualization {
         .on('brush', (selection) => this.brushed(selection))
         .filter((event) => {
             return event.ctrlKey;
+        }).on("end", () => {
+            this.main.visualizer.changeSelection();
+            this.main.statistics.update();
         });
 
         this.scale = d3.scaleOrdinal(d3.schemeCategory10);
@@ -154,8 +156,12 @@ export default class NodeLinkDiagramComponent extends Visualization {
             return;
         }
         
-        if(this.simulation === undefined) return this.oncreate();
-        
+        if(this.simulation === undefined) {
+            return this.oncreate();
+        }
+
+
+
         //If recalculate forces is equal to true then the datachangedAmunt should be 1 else it will be based on the datahandler.
         let dataChangedAmount = recalculateForces ? 1 : this.main.dataHandler.dataChangedAmount;          
 
@@ -165,7 +171,7 @@ export default class NodeLinkDiagramComponent extends Visualization {
         }
 
         if(this.main.dataHandler.highlightPerson !== undefined) {
-			const person = this.main.dataHandler.getPersons().find(person => person.id === this.main.dataHandler.highlightPerson);
+            const person = this.groupedNodes.get(this.main.dataHandler.highlightPerson);
             
             this.selectEdges(person);
 		}
@@ -682,11 +688,11 @@ export default class NodeLinkDiagramComponent extends Visualization {
     }
 
     selectEdges(node){
-        let adjacentEdges = this.edges.filter(edge => edge.source.id === node.id || edge.target.id === node.id);
+        let adjacentEdges = [...node.emailsReceived, ...node.emailsSent]
 
         for(let edge of adjacentEdges){
-            this.edgesToHighlight.push(edge.source.id + '.' + edge.target.id);       
-            this.groupedEdges.get(edge.source.id + '.' + edge.target.id).highlighted = true;
+            this.edgesToHighlight.push(edge.ids.source + '.' + edge.ids.target);       
+            this.groupedEdges.get(edge.ids.source + '.' + edge.ids.target).highlighted = true;
         }
     }
     
@@ -720,9 +726,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
                 this.main.dataHandler.removeSelectedPerson(node);
             }
         }
-        this.main.visualizer.changeSelection();
-        this.main.statistics.update();
-
      }
 
     addClickedNodes(){

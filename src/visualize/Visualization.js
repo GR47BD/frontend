@@ -15,7 +15,6 @@ export default class Visualization {
      * Called when the data has changed and the visualization has to be redrawn.
      */
     update() {
-        this.main.dataHandler.dataChanged = false;
     }
 
     /**

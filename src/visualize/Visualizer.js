@@ -40,6 +40,7 @@ export default class Visualizer {
         for(const visualization of this.visualizations.values()) {
             visualization.update();
         }
+        this.main.dataHandler.dataChanged = false;
     }
 
     step() {
