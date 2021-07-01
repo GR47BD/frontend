@@ -69,7 +69,7 @@ export default class MassiveSequenceComponent extends Visualization {
                     this.main.dataHandler.selectedPersons.delete(this.hoveredPerson.id);
                 }
                 else {
-                    this.main.dataHandler.selectedPersons.set(this.hoveredPerson.id, this.hoveredPerson);
+                    this.main.dataHandler.selectedPersons.set(this.hoveredPerson.id, this.formatNodeForSelection(this.hoveredPerson));
                 }
 
                 this.main.visualizer.changeSelection();
