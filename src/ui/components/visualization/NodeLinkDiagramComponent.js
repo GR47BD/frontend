@@ -79,8 +79,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         this.previousNodes = [];
 
-        this.clickedNodes = new Map();
-
         this.groupedJobtitles = new Set();
         this.groupedEdges = new Map();
     }
@@ -124,9 +122,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
         this.drawnNodes = this.svg.append('g').attr("class", "node").selectAll('circle').on('mousedown', (event) => {
             if(!event.ctrlKey){
                 this.main.dataHandler.clearSelectedPersons();
-                for(let node in this.clickedNodes){
-                    this.main.dataHandler.addSelectedPerson(super.formatNodeForSelection(node));
-                }
             }
         }); 
 
@@ -165,9 +160,10 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
         //If the data has changed in the datahandler the data should be updated
         if(this.main.dataHandler.dataChanged) {
-            console.log("dataChanged")
             this.updateData(dataChangedAmount);
         }
+
+        console.log(this.nodes)
 
         this.updateSimulation(dataChangedAmount);    
         this.updateForces();
@@ -176,7 +172,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     changeSelection(){
         if(this.main.dataHandler.highlightPersons !== undefined && !this.edgesAreSelected) {
-            console.log("select")
             for(let person of this.main.dataHandler.highlightPersons){
                 let node = this.groupedNodes.get(person);
                 console.log(node)
@@ -186,7 +181,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
             }
 		}
 		if (!this.edgesAreSelected) {
-            console.log("deselect edges")
 			this.deselectEdges();
 		} else this.edgesAreSelected = false;
         this.update();
@@ -686,19 +680,16 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     addSelectedNode(node){
         this.main.dataHandler.addSelectedPerson(this.formatNodeForSelection(node));
-        this.clickedNodes.set(node.id, node);
     }
 
     removeSelectedNode(node){
         this.main.dataHandler.removeSelectedPerson(node);
-        this.clickedNodes.delete(node.id) 
     }
 
     selectEdges(node){
         this.edgesAreSelected = true;
 
         let adjacentEdges = this.edges.filter(edge => edge.source.id === node.id || edge.target.id === node.id);
-        console.log(adjacentEdges);
 
         for(let edge of adjacentEdges){
             this.edgesToHighlight.push(edge.source.id + '.' + edge.target.id);       
@@ -725,24 +716,28 @@ export default class NodeLinkDiagramComponent extends Visualization {
 
     // Finds node within x and y coordinates
     searchNodesInRectangle([[x0, y0], [x1, y1]]){
+
         for (let i = 0; i < this.nodes.length; i++){
             const node = this.nodes[i];
-            if (node.x <= x1 && node.y <= y1 && node.x >= x0 && node.y >= y0){
-                if(this.main.dataHandler.personIsSelected(node)) continue;
-                this.main.dataHandler.addSelectedPerson(super.formatNodeForSelection(node));
-            }
-            else {
-                if(!this.main.dataHandler.personIsSelected(node) || this.clickedNodes.has(node.id)) continue;
-                this.main.dataHandler.removeSelectedPerson(node);
-            }
+            if(node.nodes !== undefined){
+                for(let groupedNode of node.nodes){
+                    this.checkNodeInRectangle(groupedNode, node.x, node.y, [x0, y0], [x1, y1]);
+                }
+            } else this.checkNodeInRectangle(node, node.x, node.y, [x0, y0], [x1, y1]);          
         }
      }
 
-    addClickedNodes(){
-        for(let node in this.clickedNodes){
+     checkNodeInRectangle(node, x, y, [x0, y0], [x1, y1]) {
+        if (x <= x1 && y <= y1 && x >= x0 && y >= y0){
+            if(this.main.dataHandler.personIsSelected(node)) return;
             this.main.dataHandler.addSelectedPerson(super.formatNodeForSelection(node));
         }
+        else {
+            if(!this.main.dataHandler.personIsSelected(node)) return;
+            this.main.dataHandler.removeSelectedPerson(node);
+        }
     }
+
 
     //This function can be used to get the union or the intersection between two arrays
     compareLists = (list1, list2, isUnion = false) => list1.filter((set => a => isUnion === set.has(a.id))(new Set(list2.map(b => b.id))));

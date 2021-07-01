@@ -181,10 +181,9 @@ export default class HierarchicalEdgeComponent extends Visualization {
 
 
 		if (this.main.dataHandler.highlightPersons !== undefined) {
-			console.log(this.main.dataHandler.highlightPersons);
 			for(let person of this.main.dataHandler.highlightPersons){
 				const node = this.persons.find(currentPerson => currentPerson.id === person);
-				console.log(node);
+
                 if(node !== undefined){
 					this.highlighted.set(`job.${node.jobtitle}.${this.main.dataHandler.emailToName(node.email)}`, true);
                 }
