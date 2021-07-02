@@ -163,8 +163,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
             this.updateData(dataChangedAmount);
         }
 
-        console.log(this.nodes)
-
         this.updateSimulation(dataChangedAmount);    
         this.updateForces();
         super.update();
@@ -174,7 +172,6 @@ export default class NodeLinkDiagramComponent extends Visualization {
         if(this.main.dataHandler.highlightPersons !== undefined && !this.edgesAreSelected) {
             for(let person of this.main.dataHandler.highlightPersons){
                 let node = this.groupedNodes.get(person);
-                console.log(node)
                 if(node !== undefined){
                     this.selectEdges(node);
                 }
@@ -625,6 +622,9 @@ export default class NodeLinkDiagramComponent extends Visualization {
     mouseOutNode(node){
         document.getElementById("nld-tooltip").classList.add("inactive");
         this.deselectEdges();
+        this.main.dataHandler.highlightPersons = undefined;
+        
+        this.main.visualizer.changeSelection();
     }
 
     mouseDownNode(event, node){
