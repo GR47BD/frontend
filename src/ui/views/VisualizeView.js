@@ -21,7 +21,6 @@ export default class VisualizeView {
 				<div class="visualize-container">
 					<DrawerContainerComponent>
 						<DrawerComponent title="Options" id="options-drawer">
-							<OptionPanelComponent title="General" id="general"></OptionPanelComponent>
 							<OptionPanelComponent title="Filters" id="filters">
 								<ApplyFilterComponent main={main}></ApplyFilterComponent>
 							</OptionPanelComponent>

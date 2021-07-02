@@ -4,6 +4,12 @@ import nodeLinkImage from "../../../resources/images/node-link-diagram.png";
 import hierarchicalEdgeImage from "../../../resources/images/hierarchical-edge-bundling.png";
 import massiveSequenceImage from "../../../resources/images/massive-sequence-view.png";
 import profileImage from "../../../resources/images/download.png";
+import profileImageJort from "../../../resources/images/jort.png";
+import profileImageAleksandar from "../../../resources/images/aleksandar.jpg";
+import profileImageCollin from "../../../resources/images/collin.jpg";
+import profileImageLaura from "../../../resources/images/laura.jpg";
+import profileImageBas from "../../../resources/images/bas.jpg";
+import profileImageStef from "../../../resources/images/stef.jpg";
 
 export default class IndexView {
     scrollToElement(id) {
@@ -64,7 +70,7 @@ export default class IndexView {
                     <div class="container">
                         <div class="our-team"> 
                             <div class="pic">
-                                <img src={profileImage} alt="" />
+                                <img src={profileImageAleksandar} alt="" />
                             </div>
                             <div class="team-content">
                                 <h3 class="title"> Aleksandar </h3>
@@ -77,7 +83,7 @@ export default class IndexView {
                     <div class="container">
                         <div class="our-team"> 
                             <div class="pic">
-                                <img src={profileImage} alt="" />
+                                <img src={profileImageBas} alt="" />
                             </div>
                             <div class="team-content">
                                 <h3 class="title"> Bas </h3>
@@ -90,7 +96,7 @@ export default class IndexView {
                     <div class="container">
                         <div class="our-team"> 
                             <div class="pic">
-                                <img src={profileImage} alt="" />
+                                <img src={profileImageJort} alt="" />
                             </div>
                             <div class="team-content">
                                 <h3 class="title"> Jort </h3>
@@ -103,7 +109,7 @@ export default class IndexView {
                     <div class="container">
                         <div class="our-team"> 
                             <div class="pic">
-                                <img src={profileImage} alt="" />
+                                <img src={profileImageStef} alt="" />
                             </div>
                             <div class="team-content">
                                 <h3 class="title"> Stef </h3>
@@ -116,7 +122,7 @@ export default class IndexView {
                     <div class="container">
                         <div class="our-team"> 
                             <div class="pic">
-                                <img src={profileImage} alt="" />
+                                <img src={profileImageCollin} alt="" />
                             </div>
                             <div class="team-content">
                                 <h3 class="title"> Collin </h3>
@@ -129,7 +135,7 @@ export default class IndexView {
                     <div class="container">
                         <div class="our-team"> 
                             <div class="pic">
-                                <img src={profileImage} alt="" />
+                                <img src={profileImageLaura} alt="" />
                             </div>
                             <div class="team-content">
                                 <h3 class="title"> Laura </h3>
