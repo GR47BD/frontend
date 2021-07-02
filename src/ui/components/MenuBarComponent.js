@@ -28,7 +28,7 @@ export default class MenuBarComponent {
 				</div>	
 				<div class="links">
 					<div class="link" onclick={() => m.route.set("/")}>Home</div>
-					<div class="link" onclick={() => m.route.set("/visualize")}>Visualize</div>
+					<div class="link" onclick={() => {window.location = "/#!/visualize"; window.location.reload()}}>Visualize</div>
 					<div class="link" onclick={() => window.open("https://github.com/GR47BD")}>Github</div>
 				</div>
 			</div>
