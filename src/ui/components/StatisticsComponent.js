@@ -79,7 +79,7 @@ export default class StatisticsComponent {
 						<li>There are <span class="highlight">{this.main.dataHandler.selectedPersons.size}</span> individuals.</li>
 						<li>There are <span class="highlight">{statistics.total}</span> emails sent between these individuals.</li>
 						<li>Of these emails, there are  <span class="highlight">{statistics.mutual}</span> emails sent between these individuals, 
-						<span class="highlight">{statistics.incoming}</span> emails sent to these individuals and <span class="highlight">{statistics.outgoing}</span> emails set from these individuals</li>
+						<span class="highlight">{statistics.incoming}</span> emails sent to these individuals and <span class="highlight">{statistics.outgoing}</span> emails sent by these individuals</li>
 
 					</ul> </div>				
 					);
